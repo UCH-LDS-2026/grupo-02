@@ -46,3 +46,5 @@ Instrucciones
 5. Iniciar el servidor local ejecutando: `[COMANDO_DE_EJECUCIÓN_EJ_mvn_spring-boot:run]`
 6. Acceder a la aplicación desde el navegador web en `http://localhost:8080`.
 
+
+Figma: https://www.figma.com/make/f4KomUeF9IHv3zvR4kCyF2/Restaurant-Management-Dashboard?fullscreen=1&t=awKmbso6nbQcPSZl-1
