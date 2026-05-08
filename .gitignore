@@ -1,7 +1,28 @@
-node_modules
+# --- Carpetas solicitadas ---
+node_modules/
 .env
-__pycache__
+__pycache__/
 *.log
-dist
-build
+dist/
+build/
 .DS_Store
+
+# --- Java & Maven (Específico para Spring Boot) ---
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# --- IDEs (IntelliJ, VS Code) ---
+.idea/
+*.iml
+atlassian-ide-plugin.xml
+.vscode/
+.settings/
+.project
+.classpath
+
+# --- Base de Datos & Temporales ---
+*.sql.gz
+*.temp
