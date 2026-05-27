@@ -7,7 +7,7 @@
 - Nombre: Gorri Juan Nahuel
 - Nombre: Nievas Milagros Gianella
 - Nombre: Rojas Marcos Agustin
-- Nombre: Corvalan Elio
+- Nombre: Corvalan Elio  
 
 ## Problema que resuelve:
 El sistema aborda la desorganización común en establecimientos gastronómicos donde la comunicación manual entre mozos y cocina genera errores de pedido, demoras no registradas y falta de visibilidad sobre el estado de las mesas en tiempo real, afectando la calidad del servicio y la rentabilidad.
