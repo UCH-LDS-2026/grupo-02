@@ -17,8 +17,10 @@ public class Mesa {
     @Column(nullable = false)
     private Integer capacidad;
 
-    @Column(columnDefinition = "VARCHAR(50) DEFAULT 'LIBRE'")
-    private String estado = "LIBRE";
+    // AQUÍ ESTÁ LA MAGIA: Le decimos a Java que use el Enum en lugar de String
+    @Enumerated(EnumType.STRING)
+    @Column(columnDefinition = "ENUM('LIBRE','OCUPADA','PEDIDO_EN_CURSO','POR_COBRAR') DEFAULT 'LIBRE'")
+    private EstadoMesa estado = EstadoMesa.LIBRE;
 
     // Getters y Setters
     public Integer getIdMesa() { return idMesa; }
@@ -30,6 +32,7 @@ public class Mesa {
     public Integer getCapacidad() { return capacidad; }
     public void setCapacidad(Integer capacidad) { this.capacidad = capacidad; }
 
-    public String getEstado() { return estado; }
-    public void setEstado(String estado) { this.estado = estado; }
+    // Los Getters y Setters ahora usan EstadoMesa
+    public EstadoMesa getEstado() { return estado; }
+    public void setEstado(EstadoMesa estado) { this.estado = estado; }
 }

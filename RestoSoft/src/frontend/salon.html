@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RestoSoft - Mapa del Salón</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 20px; }
+        h1 { text-align: center; color: #333; }
+        
+        /* Estilos de la grilla de mesas */
+        .salon-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* Estilos individuales de cada mesa */
+        .mesa {
+            padding: 40px 20px;
+            text-align: center;
+            border-radius: 12px;
+            cursor: pointer;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .mesa:hover { transform: scale(1.05); }
+
+        /* Colores dinámicos según el estado que envíe Java */
+        .LIBRE { background-color: #4CAF50; } /* Verde */
+        .OCUPADA { background-color: #F44336; } /* Rojo */
+        .PEDIDO_EN_CURSO { background-color: #FF9800; } /* Naranja */
+        .POR_COBRAR { background-color: #2196F3; } /* Azul */
+    </style>
+</head>
+<body>
+
+    <h1>Gestión de Salón - RestoSoft</h1>
+    
+    <div id="salon" class="salon-grid">
+        <p>Cargando mesas desde el servidor...</p>
+    </div>
+
+    <script>
+        // La URL de tu backend en Spring Boot
+        const API_URL = 'http://localhost:8080/api/mesas';
+
+        // 1. Función para pedirle las mesas a Java
+        async function cargarMesas() {
+            try {
+                const respuesta = await fetch(API_URL);
+                const mesas = await respuesta.json();
+                renderizarMesas(mesas);
+            } catch (error) {
+                document.getElementById('salon').innerHTML = '<p style="color:red">Error: Asegurate de que Spring Boot esté corriendo (Run).</p>';
+            }
+        }
+
+        // 2. Función para dibujar las mesas en la pantalla
+        function renderizarMesas(mesas) {
+            const contenedor = document.getElementById('salon');
+            contenedor.innerHTML = ''; // Limpiamos el texto de "cargando"
+
+            mesas.forEach(mesa => {
+                const divMesa = document.createElement('div');
+                // Le asignamos la clase CSS correspondiente a su estado (ej: class="mesa LIBRE")
+                divMesa.className = `mesa ${mesa.estado}`; 
+                divMesa.innerHTML = `Mesa ${mesa.numeroMesa} <br> <small>Cap: ${mesa.capacidad} pers.</small>`;
+                
+                // 3. Evento: ¿Qué pasa cuando el mozo hace clic?
+                divMesa.onclick = () => abrirMesa(mesa.idMesa, mesa.estado);
+                
+                contenedor.appendChild(divMesa);
+            });
+        }
+
+        // 4. Función para cambiar el estado (Hablar con el PUT de Java)
+        async function abrirMesa(id, estadoActual) {
+            // Lógica básica para probar: Si está libre, la ocupamos. Si está ocupada, la liberamos.
+            const nuevoEstado = estadoActual === 'LIBRE' ? 'OCUPADA' : 'LIBRE';
+            
+            await fetch(`${API_URL}/${id}/estado?nuevoEstado=${nuevoEstado}`, {
+                method: 'PUT'
+            });
+            
+            // Volvemos a cargar las mesas para que el color cambie en pantalla
+            cargarMesas();
+        }
+
+        // Ejecutamos la carga inicial cuando se abre la página
+        cargarMesas();
+    </script>
+</body>
+</html>
