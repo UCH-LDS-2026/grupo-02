@@ -33,7 +33,7 @@ public class ComandaController {
         return comandaRepository.findAll();
     }
 
-    // 3. ¡NUEVO! Endpoint para agregar un plato a una comanda específica
+    // 3. Endpoint para agregar un plato a una comanda específica
     @PostMapping("/{idComanda}/items")
     public ItemComanda agregarItemAComanda(@PathVariable Integer idComanda, @RequestBody ItemComanda nuevoItem) {
         // Buscamos la comanda en la base de datos
@@ -44,5 +44,21 @@ public class ComandaController {
         
         // Lo guardamos
         return itemComandaRepository.save(nuevoItem);
+    }
+    @PutMapping("/{id}/estado")
+    public org.springframework.http.ResponseEntity<Comanda> cambiarEstadoComanda(
+            @PathVariable Integer id, 
+            @RequestParam backend.models.EstadoComanda nuevoEstado) {
+        
+        java.util.Optional<Comanda> comandaOptional = comandaRepository.findById(id);
+
+        if (comandaOptional.isPresent()) {
+            Comanda comanda = comandaOptional.get();
+            comanda.setEstado(nuevoEstado);
+            comandaRepository.save(comanda);
+            return org.springframework.http.ResponseEntity.ok(comanda);
+        } else {
+            return org.springframework.http.ResponseEntity.notFound().build();
+        }
     }
 }
