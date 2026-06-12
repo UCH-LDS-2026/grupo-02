@@ -116,7 +116,7 @@ CREATE TABLE `mesa` (
   `id_mesa` int(11) NOT NULL,
   `numero_mesa` int(11) NOT NULL,
   `capacidad` int(11) NOT NULL,
-  `estado` enum('LIBRE','OCUPADA','PEDIDO_EN_CURSO','POR_COBRAR') DEFAULT 'LIBRE'
+  `estado` enum('LIBRE','OCUPADA','PEDIDO_EN_CURSO','EN_MESA','POR_COBRAR') DEFAULT 'LIBRE'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
