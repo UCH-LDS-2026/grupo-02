@@ -40,8 +40,8 @@ Usaremos MySQL
 
 ## Cómo ejecutar el proyecto:
 Instrucciones
-1. Clonar el repositorio: `git clone [URL_DEL_REPOSITORIO]`
-2. Navegar al directorio del proyecto: `cd [NOMBRE_DE_CARPETA]`
+1. Clonar el repositorio: `git clone [https://github.com/UCH-LDS-2026/grupo-02]`
+2. Navegar al directorio del proyecto: `cd [RestoSoft]`
 3. Configurar las variables de entorno de la base de datos en el archivo `application.properties` (o equivalente).
 4. Ejecutar el script de creación de la base de datos ubicado en `/sql/schema.sql`.
 5. Iniciar el servidor local ejecutando: `[COMANDO_DE_EJECUCIÓN_EJ_mvn_spring-boot:run]`
