@@ -3,97 +3,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RestoSoft - Mapa del Salón</title>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 20px; }
-        h1 { text-align: center; color: #333; }
-        
-        /* Estilos de la grilla de mesas */
-        .salon-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 20px;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        /* Estilos individuales de cada mesa */
-        .mesa {
-            padding: 40px 20px;
-            text-align: center;
-            border-radius: 12px;
-            cursor: pointer;
-            color: white;
-            font-weight: bold;
-            font-size: 1.2rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: transform 0.2s;
-        }
-        .mesa:hover { transform: scale(1.05); }
-
-        /* Colores dinámicos según el estado que envíe Java */
-        .LIBRE { background-color: #4CAF50; } /* Verde */
-        .OCUPADA { background-color: #F44336; } /* Rojo */
-        .PEDIDO_EN_CURSO { background-color: #FF9800; } /* Naranja */
-        .POR_COBRAR { background-color: #2196F3; } /* Azul */
-    </style>
+    <title>RestoSoft - Salón</title>
+    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="css/salon.css">
 </head>
 <body>
+    <header class="top-header">
+        <div class="header-left">
+            <a href="salon.html" class="logo">RestoSoft</a>
+            <nav class="main-nav">
+                <a href="salon.html" class="nav-item active">Mesas</a>
+                <a href="#" class="nav-item">Mostrador</a>
+                <a href="cocina.html" class="nav-item" id="navCocina">Cocina</a>
+                <a href="administracion.html" class="nav-item" id="navAdmin">Caja / Historial</a>
+            </nav>
+        </div>
+        
+        <div class="user-info">
+            <span id="nombreUsuario"></span>
+            <button id="btnLogout" class="btn-outline">Cerrar Sesión</button>
+        </div>
+    </header>
 
-    <h1>Gestión de Salón - RestoSoft</h1>
-    
-    <div id="salon" class="salon-grid">
-        <p>Cargando mesas desde el servidor...</p>
+    <div class="dashboard-container">
+        
+        <main class="mesas-section">
+            
+            <div class="sector-tabs">
+                <button class="tab-btn active">Planta Baja</button>
+                <button class="tab-btn">Planta Alta</button>
+                <button class="tab-btn">Afuera</button>
+            </div>
+
+            <div id="gridMesas" class="mesas-grid">
+                </div>
+        </main>
+
+        <aside id="panelComanda" class="comanda-panel">
+            
+            <div id="faseVacia" class="estado-vacio">
+                <p>&lt; Selecciona una mesa</p>
+            </div>
+
+            <div id="faseContenido" style="display: none; height: 100%; display: flex; flex-direction: column;">
+                <div class="panel-header">
+                    <h3 id="tituloMesa">Mesa --</h3>
+                    <button id="btnCerrarPanel" class="btn-close">X</button>
+                </div>
+                
+                <div class="panel-body">
+                    
+                    <div id="faseApertura" style="display: none;">
+                        <h4>Abrir Mesa</h4>
+                        <br>
+                        <div class="input-group">
+                            <label for="inputComensales">Cantidad de Personas</label>
+                            <input type="number" id="inputComensales" min="1" value="2">
+                        </div>
+                        <div class="input-group">
+                            <label for="inputCliente">Cliente</label>
+                            <select id="inputCliente">
+                                <option value="">Consumidor Final</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label for="inputMozo">Mozo</label>
+                            <div id="contenedorMozo"></div>
+                        </div>
+                        <button id="btnAbrirMesa" class="btn-primary" style="margin-top: 1rem;">Confirmar Apertura</button>
+                    </div>
+
+                    <div id="faseActiva" style="display: none;">
+                        <div class="resumen-mesa">
+                            <p><strong>Mozo:</strong> <span id="resumenMozo">-</span></p>
+                            <p><strong>Cliente:</strong> <span id="resumenCliente">-</span></p>
+                            <p><strong>Hora Apertura:</strong> <span id="resumenHora">-</span></p>
+                            <p><strong>Comensales:</strong> <span id="resumenComensales">-</span></p>
+                        </div>
+                        <hr class="divider">
+                        <div class="pedidos-actuales">
+                            <h4>Consumo Actual</h4>
+                            <ul id="listaConsumo" class="lista-items"></ul>
+                        </div>
+                        <hr class="divider">
+                        <div class="seccion-agregar">
+                            <h4>Agregar al Pedido</h4>
+                            <br>
+                            <div class="input-group">
+                                <select id="selectProducto">
+                                    <option value="">Seleccione un producto...</option>
+                                </select>
+                            </div>
+                            <div class="preview-pedido" id="previewPedido">
+                                <ul id="listaPreview" class="lista-items"></ul>
+                            </div>
+                            <div class="action-buttons-row">
+                                <button id="btnCancelarPreview" class="btn-danger">Cancelar</button>
+                                <button id="btnConfirmarPedido" class="btn-success">Enviar a Cocina</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="panelFooterAcciones" class="panel-footer" style="display: none;">
+                    <button id="btnEstadoComiendo" class="btn-warning">Comiendo</button>
+                    <button id="btnEstadoCobrar" class="btn-info">Pedir Cuenta (Imprimir)</button>
+                </div>
+            </div>
+        </aside>
+
     </div>
 
-    <script>
-        // La URL de tu backend en Spring Boot
-        const API_URL = 'http://localhost:8080/api/mesas';
-
-        // 1. Función para pedirle las mesas a Java
-        async function cargarMesas() {
-            try {
-                const respuesta = await fetch(API_URL);
-                const mesas = await respuesta.json();
-                renderizarMesas(mesas);
-            } catch (error) {
-                document.getElementById('salon').innerHTML = '<p style="color:red">Error: Asegurate de que Spring Boot esté corriendo (Run).</p>';
-            }
-        }
-
-        // 2. Función para dibujar las mesas en la pantalla
-        function renderizarMesas(mesas) {
-            const contenedor = document.getElementById('salon');
-            contenedor.innerHTML = ''; // Limpiamos el texto de "cargando"
-
-            mesas.forEach(mesa => {
-                const divMesa = document.createElement('div');
-                // Le asignamos la clase CSS correspondiente a su estado (ej: class="mesa LIBRE")
-                divMesa.className = `mesa ${mesa.estado}`; 
-                divMesa.innerHTML = `Mesa ${mesa.numeroMesa} <br> <small>Cap: ${mesa.capacidad} pers.</small>`;
-                
-                // 3. Evento: ¿Qué pasa cuando el mozo hace clic?
-                divMesa.onclick = () => abrirMesa(mesa.idMesa, mesa.estado);
-                
-                contenedor.appendChild(divMesa);
-            });
-        }
-
-        // 4. Función para cambiar el estado (Hablar con el PUT de Java)
-        async function abrirMesa(id, estadoActual) {
-            // Lógica básica para probar: Si está libre, la ocupamos. Si está ocupada, la liberamos.
-            const nuevoEstado = estadoActual === 'LIBRE' ? 'OCUPADA' : 'LIBRE';
-            
-            await fetch(`${API_URL}/${id}/estado?nuevoEstado=${nuevoEstado}`, {
-                method: 'PUT'
-            });
-            
-            // Volvemos a cargar las mesas para que el color cambie en pantalla
-            cargarMesas();
-        }
-
-        // Ejecutamos la carga inicial cuando se abre la página
-        cargarMesas();
-    </script>
+    <script src="js/salon.js"></script>
 </body>
 </html>

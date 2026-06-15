@@ -17,7 +17,7 @@ public class Mesa {
     @Column(nullable = false)
     private Integer capacidad;
 
-    // AQUÍ ESTÁ LA MAGIA: Le decimos a Java que use el Enum en lugar de String
+   
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition ="ENUM('LIBRE','OCUPADA','PEDIDO_EN_CURSO','EN_MESA','POR_COBRAR') DEFAULT 'LIBRE'")
     private EstadoMesa estado = EstadoMesa.LIBRE;
