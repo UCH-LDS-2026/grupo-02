@@ -196,3 +196,62 @@ body {
 .btn-danger { background-color: #ef4444; color: white; border: none; padding: 0.6rem; border-radius: 4px; cursor: pointer; font-weight: bold;}
 .btn-warning { background-color: #f59e0b; color: white; border: none; padding: 0.75rem; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%;}
 .btn-info { background-color: #3b82f6; color: white; border: none; padding: 0.75rem; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%;}
+
+
+/* --- ESTILOS FASE 2: PREVIEW DE COMANDAS --- */
+.preview-item {
+    background-color: #f3f4f6; /* El tono grisáceo para diferenciarlo */
+    border-radius: 6px;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    border-left: 4px solid #9ca3af;
+}
+
+.preview-item-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.preview-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Botones de + y - */
+.btn-qty {
+    background: #e5e7eb;
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: #4b5563;
+}
+.btn-qty:hover { background: #d1d5db; }
+
+/* Botones de Íconos (Lápiz y Basurero) */
+.btn-icon {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+.btn-icon:hover { opacity: 1; }
+
+.comentario-input {
+    width: 100%;
+    padding: 0.4rem;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-style: italic;
+}

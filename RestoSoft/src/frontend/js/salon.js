@@ -1,6 +1,8 @@
 // Variables globales para mantener el estado
 let mesaSeleccionada = null;
 let usuarioLogueadoGlobal = null;
+let menuProductos = []; 
+let carritoPreview = [];
 
 document.addEventListener("DOMContentLoaded", () => {
     
@@ -26,11 +28,31 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById('btnCerrarPanel').addEventListener('click', () => {
         document.getElementById('faseContenido').style.display = 'none';
         document.getElementById('faseVacia').style.display = 'flex';
-        mesaSeleccionada = null; // Limpiamos la selección
+        mesaSeleccionada = null;
+        carritoPreview = []; // Limpiamos la preview si cerramos el panel
+        renderizarPreview();
     });
 
-    // 4. EVENTO: BOTÓN CONFIRMAR APERTURA
+    // 4. EVENTOS DE APERTURA Y COMANDAS
     document.getElementById('btnAbrirMesa').addEventListener('click', abrirMesa);
+    
+    cargarMenu();
+
+    document.getElementById('selectProducto').addEventListener('change', (event) => {
+        const idProducto = event.target.value;
+        if (idProducto) {
+            agregarAlPreview(idProducto);
+            event.target.value = ""; 
+        }
+    });
+
+    document.getElementById('btnCancelarPreview').addEventListener('click', () => {
+        carritoPreview = []; 
+        renderizarPreview(); 
+    });
+
+    // Evento para el botón Enviar a Cocina
+    document.getElementById('btnConfirmarPedido').addEventListener('click', enviarPedidoACocina);
 });
 
 async function cargarMesas() {
@@ -57,7 +79,6 @@ async function cargarMesas() {
             `;
 
             mesaCard.addEventListener('click', () => abrirPanelComanda(mesa));
-
             gridMesas.appendChild(mesaCard);
         });
 
@@ -68,7 +89,7 @@ async function cargarMesas() {
 
 // EL CEREBRO DEL PANEL CAMALEÓN
 function abrirPanelComanda(mesa) {
-    mesaSeleccionada = mesa; // Guardamos en la variable global
+    mesaSeleccionada = mesa; 
     
     const faseVacia = document.getElementById('faseVacia');
     const faseContenido = document.getElementById('faseContenido');
@@ -80,6 +101,10 @@ function abrirPanelComanda(mesa) {
     titulo.textContent = `Mesa ${mesa.numeroMesa}`;
     faseVacia.style.display = 'none';
     faseContenido.style.display = 'flex';
+
+    // Limpiamos la preview temporal al cambiar de mesa
+    carritoPreview = [];
+    renderizarPreview();
 
     if (mesa.estado === 'LIBRE') {
         faseApertura.style.display = 'block';
@@ -100,13 +125,11 @@ function abrirPanelComanda(mesa) {
         document.getElementById('resumenMozo').textContent = usuarioLogueadoGlobal.nombre; 
         document.getElementById('resumenHora').textContent = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         
-        // Si hay valor en el input (de cuando la abrimos), lo mostramos. Si no, queda pendiente.
         const comensalesInput = document.getElementById('inputComensales').value;
         document.getElementById('resumenComensales').textContent = comensalesInput || "?"; 
     }
 }
 
-// FUNCIÓN PARA ABRIR LA MESA EN EL BACKEND
 async function abrirMesa() {
     if (!mesaSeleccionada) return;
 
@@ -115,19 +138,13 @@ async function abrirMesa() {
     btn.textContent = 'Abriendo...';
 
     try {
-        // 1. Enviamos el PUT a Java para cambiar el estado
         const responseMesa = await fetch(`http://localhost:8080/api/mesas/${mesaSeleccionada.idMesa}/estado?nuevoEstado=OCUPADA`, {
             method: 'PUT'
         });
 
         if (responseMesa.ok) {
-            // 2. Actualizamos la variable local
             mesaSeleccionada.estado = 'OCUPADA';
-            
-            // 3. Recargamos el mapa para que la mesa se pinte de rojo
             await cargarMesas();
-            
-            // 4. Forzamos la vista al estado ACTIVO (Fase 2)
             abrirPanelComanda(mesaSeleccionada);
         } else {
             alert("Hubo un error al intentar abrir la mesa.");
@@ -136,8 +153,189 @@ async function abrirMesa() {
         console.error("Error de conexión:", error);
         alert("No se pudo conectar con el servidor.");
     } finally {
-        // Restauramos el botón
         btn.disabled = false;
         btn.textContent = 'Confirmar Apertura';
+    }
+}
+
+// --- FUNCIONES DE LA FASE 2: COMANDAS ---
+
+async function cargarMenu() {
+    try {
+        const response = await fetch('http://localhost:8080/api/productos');
+        menuProductos = await response.json();
+        
+        const selectProducto = document.getElementById('selectProducto');
+        selectProducto.innerHTML = '<option value="">Seleccione un producto...</option>';
+        
+        menuProductos.forEach(producto => {
+            const option = document.createElement('option');
+            option.value = producto.idProducto; 
+            option.textContent = `${producto.nombre} - $${producto.precio}`;
+            selectProducto.appendChild(option);
+        });
+    } catch (error) {
+        console.error("Error al cargar el menú:", error);
+    }
+}
+
+function agregarAlPreview(idProductoBuscado) {
+    const producto = menuProductos.find(p => p.idProducto == idProductoBuscado); 
+    
+    if (producto) {
+        const itemExistente = carritoPreview.find(item => item.producto.idProducto == idProductoBuscado);
+        
+        if (itemExistente) {
+            itemExistente.cantidad++; 
+        } else {
+            carritoPreview.push({ 
+                producto: producto, 
+                cantidad: 1, 
+                comentario: "" 
+            });
+        }
+        renderizarPreview();
+    }
+}
+
+function modificarCantidad(index, delta) {
+    carritoPreview[index].cantidad += delta;
+    if (carritoPreview[index].cantidad <= 0) {
+        carritoPreview.splice(index, 1); 
+    }
+    renderizarPreview();
+}
+
+function eliminarDelPreview(index) {
+    carritoPreview.splice(index, 1);
+    renderizarPreview();
+}
+
+function actualizarComentario(index, texto) {
+    carritoPreview[index].comentario = texto;
+}
+
+function toggleComentario(index) {
+    const input = document.getElementById(`comentario-${index}`);
+    if (input.style.display === 'none') {
+        input.style.display = 'block';
+        input.focus();
+    } else {
+        if(input.value.trim() === '') {
+            input.style.display = 'none';
+        }
+    }
+}
+
+function renderizarPreview() {
+    const listaPreview = document.getElementById('listaPreview');
+    listaPreview.innerHTML = ''; 
+    
+    let totalTemporal = 0;
+
+    carritoPreview.forEach((item, index) => {
+        const li = document.createElement('li');
+        li.className = 'preview-item'; 
+        
+        const subtotal = item.producto.precio * item.cantidad;
+        totalTemporal += subtotal;
+
+        li.innerHTML = `
+            <div class="preview-item-main">
+                <div style="display: flex; flex-direction: column;">
+                    <strong>${item.producto.nombre}</strong>
+                    <span style="font-size: 0.8rem; color: #6b7280;">$${item.producto.precio} c/u</span>
+                </div>
+                <div class="preview-controls">
+                    <button class="btn-qty" onclick="modificarCantidad(${index}, -1)">-</button>
+                    <span style="font-weight: bold; min-width: 20px; text-align: center;">${item.cantidad}</span>
+                    <button class="btn-qty" onclick="modificarCantidad(${index}, 1)">+</button>
+                    
+                    <span style="margin-left: 0.5rem; font-weight: bold; width: 55px; text-align: right;">$${subtotal}</span>
+                    
+                    <button class="btn-icon" onclick="toggleComentario(${index})" title="Aclaraciones">✏️</button>
+                    <button class="btn-icon" onclick="eliminarDelPreview(${index})" title="Eliminar">🗑️</button>
+                </div>
+            </div>
+            <input type="text" 
+                   class="comentario-input" 
+                   id="comentario-${index}" 
+                   placeholder="Ej: Sin cebolla..." 
+                   value="${item.comentario}" 
+                   onchange="actualizarComentario(${index}, this.value)"
+                   style="display: ${item.comentario ? 'block' : 'none'};">
+        `;
+        listaPreview.appendChild(li);
+    });
+
+    const btnConfirmar = document.getElementById('btnConfirmarPedido');
+    
+    if (carritoPreview.length > 0) {
+        const liTotal = document.createElement('li');
+        liTotal.style.display = 'flex';
+        liTotal.style.justifyContent = 'space-between';
+        liTotal.style.fontWeight = 'bold';
+        liTotal.style.borderTop = '2px solid #ccc';
+        liTotal.style.paddingTop = '0.75rem';
+        liTotal.style.marginTop = '0.5rem';
+        liTotal.innerHTML = `
+            <span>TOTAL ESTIMADO</span>
+            <span>$${totalTemporal}</span>
+        `;
+        listaPreview.appendChild(liTotal);
+        btnConfirmar.disabled = false; // Habilitamos el botón si hay items
+    } else {
+        btnConfirmar.disabled = true; // Bloqueamos el botón si el carrito está vacío
+    }
+}
+
+//FUNCIÓN PARA ENVIAR A COCINA (BACKEND)
+async function enviarPedidoACocina() {
+    if (carritoPreview.length === 0 || !mesaSeleccionada) return;
+
+    const btn = document.getElementById('btnConfirmarPedido');
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
+
+    // Armamos el paquete de datos para Java
+    const paqueteComanda = {
+        idMesa: mesaSeleccionada.idMesa,
+        idUsuario: usuarioLogueadoGlobal.id,
+        detalles: carritoPreview.map(item => ({
+            idProducto: item.producto.idProducto,
+            cantidad: item.cantidad,
+            comentarios: item.comentario
+        }))
+    };
+
+    try {
+        // Este endpoint tiene que existir en Java (ComandaController)
+        const response = await fetch('http://localhost:8080/api/comandas', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(paqueteComanda)
+        });
+
+        if (response.ok) {
+            // ¡Éxito! Vaciamos el carrito temporal y volvemos a la normalidad
+            carritoPreview = [];
+            renderizarPreview();
+            
+            // Opcional: Cambiar la mesa a "PEDIDO_EN_CURSO" si estaba solo ocupada
+            mesaSeleccionada.estado = 'PEDIDO_EN_CURSO';
+            await cargarMesas();
+            
+            alert("¡Pedido enviado a la cocina exitosamente!");
+        } else {
+            alert("Error al enviar el pedido. Asegurate de que el backend esté listo.");
+        }
+    } catch (error) {
+        console.error("Error al comunicar con el backend:", error);
+        alert("Falla de conexión. ¿Está corriendo Spring Boot?");
+    } finally {
+        btn.textContent = 'Enviar a Cocina';
+        if (carritoPreview.length > 0) btn.disabled = false;
     }
 }
