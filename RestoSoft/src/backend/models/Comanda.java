@@ -35,6 +35,11 @@ public class Comanda {
     @Column(columnDefinition = "ENUM('PENDIENTE','EN_PRODUCCION','LISTO','ENTREGADO') DEFAULT 'PENDIENTE'")
     private EstadoComanda estado = EstadoComanda.PENDIENTE;
 
+    //LISTA DE ÍTEMS CONECTADA
+    @OneToMany(mappedBy = "comanda", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JsonIgnoreProperties("comanda") 
+    private List<ItemComanda> items;
+
     // Getters y Setters
     public Integer getIdComanda() { return idComanda; }
     public void setIdComanda(Integer idComanda) { this.idComanda = idComanda; }
@@ -53,4 +58,7 @@ public class Comanda {
 
     public EstadoComanda getEstado() { return estado; }
     public void setEstado(EstadoComanda estado) { this.estado = estado; }
+    
+    public List<ItemComanda> getItems() { return items; }
+    public void setItems(List<ItemComanda> items) { this.items = items; }
 }

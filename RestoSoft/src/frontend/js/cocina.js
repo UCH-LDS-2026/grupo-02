@@ -3,13 +3,14 @@ document.addEventListener("DOMContentLoaded", () => {
     // 1. CONTROL DE SEGURIDAD
     const usuarioLogueado = JSON.parse(localStorage.getItem('usuarioLogueado'));
     
-    // Solo permitimos entrar al Cocinero o al Admin
-    if (!usuarioLogueado || (usuarioLogueado.rol !== 'COCINERO' && usuarioLogueado.rol !== 'ADMIN')) {
+    // Ahora permitimos COCINA, ADMIN y también MOZO
+    if (!usuarioLogueado || (usuarioLogueado.rol !== 'COCINA' && usuarioLogueado.rol !== 'ADMIN' && usuarioLogueado.rol !== 'MOZO')) {
         window.location.href = 'index.html';
         return; 
     }
 
-    document.getElementById('nombreUsuario').textContent = `Chef ${usuarioLogueado.nombre}`;
+    // Le mostramos su nombre real, ya sea Mozo o Chef
+    document.getElementById('nombreUsuario').textContent = `${usuarioLogueado.nombre} (${usuarioLogueado.rol})`;
 
     document.getElementById('btnLogout').addEventListener('click', () => {
         localStorage.removeItem('usuarioLogueado');

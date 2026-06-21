@@ -9,31 +9,46 @@ document.addEventListener("DOMContentLoaded", () => {
     // 1. CONTROL DE SEGURIDAD
     usuarioLogueadoGlobal = JSON.parse(localStorage.getItem('usuarioLogueado'));
     
-    if (!usuarioLogueadoGlobal || (usuarioLogueadoGlobal.rol !== 'MOZO' && usuarioLogueadoGlobal.rol !== 'ADMIN')) {
+    if (!usuarioLogueadoGlobal) {
         window.location.href = 'index.html';
         return; 
     }
 
-    document.getElementById('nombreUsuario').textContent = `Hola, ${usuarioLogueadoGlobal.nombre}`;
+    document.getElementById('nombreUsuario').textContent = `Hola, ${usuarioLogueadoGlobal.nombre} (${usuarioLogueadoGlobal.rol})`;
+
+    // 2. CONTROL DE ACCESO AL MENÚ SUPERIOR
+    const navAdmin = document.getElementById('navAdmin'); // El link de Caja/Historial
+    if (usuarioLogueadoGlobal.rol === 'MOZO' || usuarioLogueadoGlobal.rol === 'COCINA') {
+        if (navAdmin) navAdmin.style.display = 'none'; // Lo ocultamos
+    }
 
     document.getElementById('btnLogout').addEventListener('click', () => {
         localStorage.removeItem('usuarioLogueado');
         window.location.href = 'index.html';
     });
 
-    // 2. CARGAR LAS MESAS DESDE JAVA
+    // 3. LÓGICA DE LAS PESTAÑAS DE SECTORES
+    const botonesSector = document.querySelectorAll('.tab-btn');
+    botonesSector.forEach(boton => {
+        boton.addEventListener('click', (e) => {
+            botonesSector.forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+        });
+    });
+
+    // 4. CARGAR LAS MESAS DESDE JAVA
     cargarMesas();
 
-    // 3. LÓGICA DEL BOTÓN 'X'
+    // 5. LÓGICA DEL BOTÓN 'X' DEL PANEL
     document.getElementById('btnCerrarPanel').addEventListener('click', () => {
         document.getElementById('faseContenido').style.display = 'none';
         document.getElementById('faseVacia').style.display = 'flex';
         mesaSeleccionada = null;
-        carritoPreview = []; // Limpiamos la preview si cerramos el panel
+        carritoPreview = []; 
         renderizarPreview();
     });
 
-    // 4. EVENTOS DE APERTURA Y COMANDAS
+    // 6. EVENTOS DE APERTURA Y COMANDAS
     document.getElementById('btnAbrirMesa').addEventListener('click', abrirMesa);
     
     cargarMenu();
@@ -51,8 +66,11 @@ document.addEventListener("DOMContentLoaded", () => {
         renderizarPreview(); 
     });
 
-    // Evento para el botón Enviar a Cocina
     document.getElementById('btnConfirmarPedido').addEventListener('click', enviarPedidoACocina);
+
+    // 7. EVENTOS DE CIERRE DE MESA (NUEVO)
+    document.getElementById('btnEstadoComiendo').addEventListener('click', () => cambiarEstadoMesaLocal('OCUPADA'));
+    document.getElementById('btnEstadoCobrar').addEventListener('click', () => cambiarEstadoMesaLocal('POR_COBRAR'));
 });
 
 async function cargarMesas() {
@@ -87,7 +105,7 @@ async function cargarMesas() {
     }
 }
 
-// EL CEREBRO DEL PANEL CAMALEÓN
+// EL CEREBRO DEL PANEL
 function abrirPanelComanda(mesa) {
     mesaSeleccionada = mesa; 
     
@@ -138,12 +156,22 @@ async function abrirMesa() {
     btn.textContent = 'Abriendo...';
 
     try {
-        const responseMesa = await fetch(`http://localhost:8080/api/mesas/${mesaSeleccionada.idMesa}/estado?nuevoEstado=OCUPADA`, {
-            method: 'PUT'
-        });
+        // AHORA MANDAMOS EL ID DEL MOZO EN LA URL
+        const url = `http://localhost:8080/api/mesas/${mesaSeleccionada.idMesa}/estado?nuevoEstado=OCUPADA&idUsuario=${usuarioLogueadoGlobal.id}`;
+        
+        const responseMesa = await fetch(url, { method: 'PUT' });
 
         if (responseMesa.ok) {
+            const data = await responseMesa.json();
+            
             mesaSeleccionada.estado = 'OCUPADA';
+            
+            // GUARDAMOS EL ID DE LA INSTANCIA PARA USARLO EN LA COMANDA
+            if (data.idInstanciaActiva) {
+                mesaSeleccionada.idInstanciaActual = data.idInstanciaActiva;
+                // Opcional: Actualizar el HTML con los datos de apertura reales (data.nombreMozoApertura, data.horaApertura)
+            }
+            
             await cargarMesas();
             abrirPanelComanda(mesaSeleccionada);
         } else {
@@ -283,13 +311,12 @@ function renderizarPreview() {
             <span>$${totalTemporal}</span>
         `;
         listaPreview.appendChild(liTotal);
-        btnConfirmar.disabled = false; // Habilitamos el botón si hay items
+        btnConfirmar.disabled = false; 
     } else {
-        btnConfirmar.disabled = true; // Bloqueamos el botón si el carrito está vacío
+        btnConfirmar.disabled = true; 
     }
 }
 
-//FUNCIÓN PARA ENVIAR A COCINA (BACKEND)
 async function enviarPedidoACocina() {
     if (carritoPreview.length === 0 || !mesaSeleccionada) return;
 
@@ -297,10 +324,10 @@ async function enviarPedidoACocina() {
     btn.disabled = true;
     btn.textContent = 'Enviando...';
 
-    // Armamos el paquete de datos para Java
     const paqueteComanda = {
         idMesa: mesaSeleccionada.idMesa,
         idUsuario: usuarioLogueadoGlobal.id,
+        idInstancia: mesaSeleccionada.idInstanciaActual,
         detalles: carritoPreview.map(item => ({
             idProducto: item.producto.idProducto,
             cantidad: item.cantidad,
@@ -309,7 +336,6 @@ async function enviarPedidoACocina() {
     };
 
     try {
-        // Este endpoint tiene que existir en Java (ComandaController)
         const response = await fetch('http://localhost:8080/api/comandas', {
             method: 'POST',
             headers: {
@@ -319,23 +345,42 @@ async function enviarPedidoACocina() {
         });
 
         if (response.ok) {
-            // ¡Éxito! Vaciamos el carrito temporal y volvemos a la normalidad
             carritoPreview = [];
             renderizarPreview();
-            
-            // Opcional: Cambiar la mesa a "PEDIDO_EN_CURSO" si estaba solo ocupada
+
             mesaSeleccionada.estado = 'PEDIDO_EN_CURSO';
             await cargarMesas();
             
             alert("¡Pedido enviado a la cocina exitosamente!");
         } else {
-            alert("Error al enviar el pedido. Asegurate de que el backend esté listo.");
+            alert("Error al enviar el pedido. Por favor, intentá nuevamente.");
         }
     } catch (error) {
         console.error("Error al comunicar con el backend:", error);
-        alert("Falla de conexión. ¿Está corriendo Spring Boot?");
+        alert("Falla de conexión.");
     } finally {
         btn.textContent = 'Enviar a Cocina';
         if (carritoPreview.length > 0) btn.disabled = false;
+    }
+}
+
+// --- FUNCIONES DE LA FASE 3: CIERRE DE MESA (NUEVO) ---
+async function cambiarEstadoMesaLocal(nuevoEstado) {
+    if (!mesaSeleccionada) return;
+
+    try {
+        const response = await fetch(`http://localhost:8080/api/mesas/${mesaSeleccionada.idMesa}/estado?nuevoEstado=${nuevoEstado}`, {
+            method: 'PUT'
+        });
+
+        if (response.ok) {
+            mesaSeleccionada.estado = nuevoEstado;
+            await cargarMesas();
+            abrirPanelComanda(mesaSeleccionada);
+        } else {
+            alert("Error al cambiar el estado de la mesa.");
+        }
+    } catch (error) {
+        console.error("Falla de conexión al cambiar estado:", error);
     }
 }

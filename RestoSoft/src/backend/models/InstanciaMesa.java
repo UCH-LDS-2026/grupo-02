@@ -12,11 +12,15 @@ public class InstanciaMesa {
     @Column(name = "id_instancia")
     private Integer idInstancia;
 
-    @Column(name = "id_mesa", nullable = false)
-    private Integer idMesa;
+    // Conexión real con Mesa
+    @ManyToOne
+    @JoinColumn(name = "id_mesa", nullable = false)
+    private Mesa mesa;
 
-    @Column(name = "id_mozo", nullable = false)
-    private Integer idMozo;
+    // Conexión real con Usuario
+    @ManyToOne
+    @JoinColumn(name = "id_mozo", nullable = false)
+    private Usuario mozo;
 
     @Column(name = "fecha_apertura")
     private LocalDateTime fechaApertura;
@@ -24,60 +28,29 @@ public class InstanciaMesa {
     @Column(name = "fecha_cierre")
     private LocalDateTime fechaCierre;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "estado_actual", length = 50)
-    private String estadoActual;
+    private EstadoMesa estadoActual; // Usamos el Enum para no pifiar
 
-    // Constructor vacío obligatorio para JPA
-    public InstanciaMesa() {
-    }
+    // Constructor
+    public InstanciaMesa() {}
 
     // Getters y Setters
+    public Integer getIdInstancia() { return idInstancia; }
+    public void setIdInstancia(Integer idInstancia) { this.idInstancia = idInstancia; }
 
-    public Integer getIdInstancia() {
-        return idInstancia;
-    }
+    public Mesa getMesa() { return mesa; }
+    public void setMesa(Mesa mesa) { this.mesa = mesa; }
 
-    public void setIdInstancia(Integer idInstancia) {
-        this.idInstancia = idInstancia;
-    }
+    public Usuario getMozo() { return mozo; }
+    public void setMozo(Usuario mozo) { this.mozo = mozo; }
 
-    public Integer getIdMesa() {
-        return idMesa;
-    }
+    public LocalDateTime getFechaApertura() { return fechaApertura; }
+    public void setFechaApertura(LocalDateTime fechaApertura) { this.fechaApertura = fechaApertura; }
 
-    public void setIdMesa(Integer idMesa) {
-        this.idMesa = idMesa;
-    }
+    public LocalDateTime getFechaCierre() { return fechaCierre; }
+    public void setFechaCierre(LocalDateTime fechaCierre) { this.fechaCierre = fechaCierre; }
 
-    public Integer getIdMozo() {
-        return idMozo;
-    }
-
-    public void setIdMozo(Integer idMozo) {
-        this.idMozo = idMozo;
-    }
-
-    public LocalDateTime getFechaApertura() {
-        return fechaApertura;
-    }
-
-    public void setFechaApertura(LocalDateTime fechaApertura) {
-        this.fechaApertura = fechaApertura;
-    }
-
-    public LocalDateTime getFechaCierre() {
-        return fechaCierre;
-    }
-
-    public void setFechaCierre(LocalDateTime fechaCierre) {
-        this.fechaCierre = fechaCierre;
-    }
-
-    public String getEstadoActual() {
-        return estadoActual;
-    }
-
-    public void setEstadoActual(String estadoActual) {
-        this.estadoActual = estadoActual;
-    }
+    public EstadoMesa getEstadoActual() { return estadoActual; }
+    public void setEstadoActual(EstadoMesa estadoActual) { this.estadoActual = estadoActual; }
 }
