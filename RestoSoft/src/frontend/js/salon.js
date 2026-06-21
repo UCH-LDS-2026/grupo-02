@@ -7,37 +7,38 @@ let carritoPreview = [];
 document.addEventListener("DOMContentLoaded", () => {
     
     // 1. CONTROL DE SEGURIDAD
-    usuarioLogueadoGlobal = JSON.parse(localStorage.getItem('usuarioLogueado'));
+    const userStored = localStorage.getItem('usuarioLogueado');
+    if (!userStored) {
+        window.location.href = 'index.html';
+        return;
+    }
     
-    if (!usuarioLogueadoGlobal) {
-        window.location.href = 'index.html';
-        return; 
+    usuarioLogueadoGlobal = JSON.parse(userStored);
+    
+    // Mostramos nombre
+    const nombreDisplay = document.getElementById('nombreUsuario');
+    if (nombreDisplay) {
+        nombreDisplay.textContent = `Hola, ${usuarioLogueadoGlobal.nombre} (${usuarioLogueadoGlobal.rol})`;
     }
 
-    document.getElementById('nombreUsuario').textContent = `Hola, ${usuarioLogueadoGlobal.nombre} (${usuarioLogueadoGlobal.rol})`;
-
-    // 2. CONTROL DE ACCESO AL MENÚ SUPERIOR
-    const navAdmin = document.getElementById('navAdmin'); // El link de Caja/Historial
-    if (usuarioLogueadoGlobal.rol === 'MOZO' || usuarioLogueadoGlobal.rol === 'COCINA') {
-        if (navAdmin) navAdmin.style.display = 'none'; // Lo ocultamos
+    // 2. SEGURIDAD DE MENÚ
+    const navAdmin = document.getElementById('navAdmin');
+    if (navAdmin && (usuarioLogueadoGlobal.rol === 'MOZO' || usuarioLogueadoGlobal.rol === 'COCINA')) {
+        navAdmin.style.display = 'none';
     }
 
-    document.getElementById('btnLogout').addEventListener('click', () => {
-        localStorage.removeItem('usuarioLogueado');
-        window.location.href = 'index.html';
-    });
-
-    // 3. LÓGICA DE LAS PESTAÑAS DE SECTORES
-    const botonesSector = document.querySelectorAll('.tab-btn');
-    botonesSector.forEach(boton => {
-        boton.addEventListener('click', (e) => {
-            botonesSector.forEach(b => b.classList.remove('active'));
-            e.target.classList.add('active');
+    // 3. LOGOUT
+    const btnLogout = document.getElementById('btnLogout');
+    if (btnLogout) {
+        btnLogout.addEventListener('click', () => {
+            localStorage.removeItem('usuarioLogueado');
+            window.location.href = 'index.html';
         });
-    });
+    }
 
-    // 4. CARGAR LAS MESAS DESDE JAVA
+    // 4. CARGA INICIAL
     cargarMesas();
+    cargarMenu();
 
     // 5. LÓGICA DEL BOTÓN 'X' DEL PANEL
     document.getElementById('btnCerrarPanel').addEventListener('click', () => {
@@ -51,8 +52,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // 6. EVENTOS DE APERTURA Y COMANDAS
     document.getElementById('btnAbrirMesa').addEventListener('click', abrirMesa);
     
-    cargarMenu();
-
     document.getElementById('selectProducto').addEventListener('change', (event) => {
         const idProducto = event.target.value;
         if (idProducto) {
@@ -68,7 +67,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById('btnConfirmarPedido').addEventListener('click', enviarPedidoACocina);
 
-    // 7. EVENTOS DE CIERRE DE MESA (NUEVO)
+    // 7. EVENTOS DE CIERRE DE MESA
     document.getElementById('btnEstadoComiendo').addEventListener('click', () => cambiarEstadoMesaLocal('OCUPADA'));
     document.getElementById('btnEstadoCobrar').addEventListener('click', () => cambiarEstadoMesaLocal('POR_COBRAR'));
 });
@@ -105,8 +104,8 @@ async function cargarMesas() {
     }
 }
 
-// EL CEREBRO DEL PANEL
-function abrirPanelComanda(mesa) {
+// EL CEREBRO DEL PANEL - AHORA ASYNC PARA PERMITIR AWAIT
+async function abrirPanelComanda(mesa) {
     mesaSeleccionada = mesa; 
     
     const faseVacia = document.getElementById('faseVacia');
@@ -120,7 +119,6 @@ function abrirPanelComanda(mesa) {
     faseVacia.style.display = 'none';
     faseContenido.style.display = 'flex';
 
-    // Limpiamos la preview temporal al cambiar de mesa
     carritoPreview = [];
     renderizarPreview();
 
@@ -136,15 +134,21 @@ function abrirPanelComanda(mesa) {
             contMozo.innerHTML = `<input type="text" id="inputMozo" value="${usuarioLogueadoGlobal.nombre}" class="form-input" disabled style="width:100%; padding: 0.5rem; background-color: #e5e7eb; border: 1px solid #ccc; border-radius: 4px;">`;
         }
     } else {
+        try {
+            const response = await fetch(`http://localhost:8080/api/instancias/mesa/${mesa.idMesa}`);
+            if (response.ok) {
+                const instancia = await response.json();
+                document.getElementById('resumenMozo').textContent = instancia.mozo.nombre; 
+                document.getElementById('resumenHora').textContent = new Date(instancia.fechaApertura).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                mesaSeleccionada.idInstanciaActual = instancia.idInstancia;
+            }
+        } catch (e) {
+            console.log("No se pudo obtener la instancia activa");
+        }
+
         faseApertura.style.display = 'none';
         faseActiva.style.display = 'block';
         panelFooter.style.display = 'flex'; 
-
-        document.getElementById('resumenMozo').textContent = usuarioLogueadoGlobal.nombre; 
-        document.getElementById('resumenHora').textContent = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        
-        const comensalesInput = document.getElementById('inputComensales').value;
-        document.getElementById('resumenComensales').textContent = comensalesInput || "?"; 
     }
 }
 
@@ -156,22 +160,15 @@ async function abrirMesa() {
     btn.textContent = 'Abriendo...';
 
     try {
-        // AHORA MANDAMOS EL ID DEL MOZO EN LA URL
         const url = `http://localhost:8080/api/mesas/${mesaSeleccionada.idMesa}/estado?nuevoEstado=OCUPADA&idUsuario=${usuarioLogueadoGlobal.id}`;
-        
         const responseMesa = await fetch(url, { method: 'PUT' });
 
         if (responseMesa.ok) {
             const data = await responseMesa.json();
-            
             mesaSeleccionada.estado = 'OCUPADA';
-            
-            // GUARDAMOS EL ID DE LA INSTANCIA PARA USARLO EN LA COMANDA
             if (data.idInstanciaActiva) {
                 mesaSeleccionada.idInstanciaActual = data.idInstanciaActiva;
-                // Opcional: Actualizar el HTML con los datos de apertura reales (data.nombreMozoApertura, data.horaApertura)
             }
-            
             await cargarMesas();
             abrirPanelComanda(mesaSeleccionada);
         } else {
@@ -185,8 +182,6 @@ async function abrirMesa() {
         btn.textContent = 'Confirmar Apertura';
     }
 }
-
-// --- FUNCIONES DE LA FASE 2: COMANDAS ---
 
 async function cargarMenu() {
     try {
@@ -209,121 +204,44 @@ async function cargarMenu() {
 
 function agregarAlPreview(idProductoBuscado) {
     const producto = menuProductos.find(p => p.idProducto == idProductoBuscado); 
-    
     if (producto) {
         const itemExistente = carritoPreview.find(item => item.producto.idProducto == idProductoBuscado);
-        
         if (itemExistente) {
             itemExistente.cantidad++; 
         } else {
-            carritoPreview.push({ 
-                producto: producto, 
-                cantidad: 1, 
-                comentario: "" 
-            });
+            carritoPreview.push({ producto: producto, cantidad: 1, comentario: "" });
         }
         renderizarPreview();
-    }
-}
-
-function modificarCantidad(index, delta) {
-    carritoPreview[index].cantidad += delta;
-    if (carritoPreview[index].cantidad <= 0) {
-        carritoPreview.splice(index, 1); 
-    }
-    renderizarPreview();
-}
-
-function eliminarDelPreview(index) {
-    carritoPreview.splice(index, 1);
-    renderizarPreview();
-}
-
-function actualizarComentario(index, texto) {
-    carritoPreview[index].comentario = texto;
-}
-
-function toggleComentario(index) {
-    const input = document.getElementById(`comentario-${index}`);
-    if (input.style.display === 'none') {
-        input.style.display = 'block';
-        input.focus();
-    } else {
-        if(input.value.trim() === '') {
-            input.style.display = 'none';
-        }
     }
 }
 
 function renderizarPreview() {
     const listaPreview = document.getElementById('listaPreview');
     listaPreview.innerHTML = ''; 
-    
     let totalTemporal = 0;
 
     carritoPreview.forEach((item, index) => {
         const li = document.createElement('li');
         li.className = 'preview-item'; 
-        
         const subtotal = item.producto.precio * item.cantidad;
         totalTemporal += subtotal;
-
         li.innerHTML = `
             <div class="preview-item-main">
-                <div style="display: flex; flex-direction: column;">
-                    <strong>${item.producto.nombre}</strong>
-                    <span style="font-size: 0.8rem; color: #6b7280;">$${item.producto.precio} c/u</span>
-                </div>
+                <strong>${item.producto.nombre}</strong>
                 <div class="preview-controls">
-                    <button class="btn-qty" onclick="modificarCantidad(${index}, -1)">-</button>
-                    <span style="font-weight: bold; min-width: 20px; text-align: center;">${item.cantidad}</span>
-                    <button class="btn-qty" onclick="modificarCantidad(${index}, 1)">+</button>
-                    
-                    <span style="margin-left: 0.5rem; font-weight: bold; width: 55px; text-align: right;">$${subtotal}</span>
-                    
-                    <button class="btn-icon" onclick="toggleComentario(${index})" title="Aclaraciones">✏️</button>
-                    <button class="btn-icon" onclick="eliminarDelPreview(${index})" title="Eliminar">🗑️</button>
+                    <button onclick="modificarCantidad(${index}, -1)">-</button>
+                    <span>${item.cantidad}</span>
+                    <button onclick="modificarCantidad(${index}, 1)">+</button>
+                    <span>$${subtotal}</span>
                 </div>
             </div>
-            <input type="text" 
-                   class="comentario-input" 
-                   id="comentario-${index}" 
-                   placeholder="Ej: Sin cebolla..." 
-                   value="${item.comentario}" 
-                   onchange="actualizarComentario(${index}, this.value)"
-                   style="display: ${item.comentario ? 'block' : 'none'};">
         `;
         listaPreview.appendChild(li);
     });
-
-    const btnConfirmar = document.getElementById('btnConfirmarPedido');
-    
-    if (carritoPreview.length > 0) {
-        const liTotal = document.createElement('li');
-        liTotal.style.display = 'flex';
-        liTotal.style.justifyContent = 'space-between';
-        liTotal.style.fontWeight = 'bold';
-        liTotal.style.borderTop = '2px solid #ccc';
-        liTotal.style.paddingTop = '0.75rem';
-        liTotal.style.marginTop = '0.5rem';
-        liTotal.innerHTML = `
-            <span>TOTAL ESTIMADO</span>
-            <span>$${totalTemporal}</span>
-        `;
-        listaPreview.appendChild(liTotal);
-        btnConfirmar.disabled = false; 
-    } else {
-        btnConfirmar.disabled = true; 
-    }
 }
 
 async function enviarPedidoACocina() {
     if (carritoPreview.length === 0 || !mesaSeleccionada) return;
-
-    const btn = document.getElementById('btnConfirmarPedido');
-    btn.disabled = true;
-    btn.textContent = 'Enviando...';
-
     const paqueteComanda = {
         idMesa: mesaSeleccionada.idMesa,
         idUsuario: usuarioLogueadoGlobal.id,
@@ -334,53 +252,36 @@ async function enviarPedidoACocina() {
             comentarios: item.comentario
         }))
     };
-
     try {
         const response = await fetch('http://localhost:8080/api/comandas', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(paqueteComanda)
         });
-
         if (response.ok) {
             carritoPreview = [];
             renderizarPreview();
-
             mesaSeleccionada.estado = 'PEDIDO_EN_CURSO';
             await cargarMesas();
-            
             alert("¡Pedido enviado a la cocina exitosamente!");
-        } else {
-            alert("Error al enviar el pedido. Por favor, intentá nuevamente.");
         }
     } catch (error) {
-        console.error("Error al comunicar con el backend:", error);
         alert("Falla de conexión.");
-    } finally {
-        btn.textContent = 'Enviar a Cocina';
-        if (carritoPreview.length > 0) btn.disabled = false;
     }
 }
 
-// --- FUNCIONES DE LA FASE 3: CIERRE DE MESA (NUEVO) ---
 async function cambiarEstadoMesaLocal(nuevoEstado) {
     if (!mesaSeleccionada) return;
-
     try {
         const response = await fetch(`http://localhost:8080/api/mesas/${mesaSeleccionada.idMesa}/estado?nuevoEstado=${nuevoEstado}`, {
             method: 'PUT'
         });
-
         if (response.ok) {
             mesaSeleccionada.estado = nuevoEstado;
             await cargarMesas();
             abrirPanelComanda(mesaSeleccionada);
-        } else {
-            alert("Error al cambiar el estado de la mesa.");
         }
     } catch (error) {
-        console.error("Falla de conexión al cambiar estado:", error);
+        console.error("Falla de conexión:", error);
     }
 }

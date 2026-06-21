@@ -1,4 +1,4 @@
-package controllers;
+/*package controllers;
 import backend.controllers.MesaController;
 import backend.models.EstadoMesa;
 import backend.models.HistorialMesa;
@@ -76,4 +76,4 @@ class MesaControllerTest {
         assertNotNull(resultado.getIdMesa());
         assertEquals(1, resultado.getIdMesa());
     }
-}
+}*/

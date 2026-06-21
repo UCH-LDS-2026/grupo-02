@@ -38,9 +38,8 @@ public class FacturaController {
             @RequestParam Integer idCajero,
             @RequestParam String metodoPago) {
 
-        Optional<InstanciaMesa> instanciaOpt =
-                instanciaMesaRepository
-                        .findTopByIdMesaOrderByIdInstanciaDesc(idMesa);
+       Optional<InstanciaMesa> instanciaOpt = instanciaMesaRepository
+        .findTopByMesaIdMesaOrderByFechaAperturaDesc(idMesa);
 
         if (instanciaOpt.isEmpty()) {
             return ResponseEntity.badRequest()
@@ -78,7 +77,7 @@ public class FacturaController {
         facturaRepository.save(factura);
 
         instancia.setFechaCierre(LocalDateTime.now());
-        instancia.setEstadoActual("CERRADA");
+   instancia.setEstadoActual(EstadoMesa.LIBRE);
         instanciaMesaRepository.save(instancia);
 
         Optional<Mesa> mesaOpt = mesaRepository.findById(idMesa);
