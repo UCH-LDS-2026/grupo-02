@@ -9,6 +9,11 @@ document.addEventListener("DOMContentLoaded", () => {
         return; 
     }
 
+    const navAdmin = document.getElementById('navAdmin');
+    if (navAdmin && (usuarioLogueadoGlobal.rol === 'MOZO' || usuarioLogueadoGlobal.rol === 'COCINA')) {
+        navAdmin.style.display = 'none';
+    }
+
     // Le mostramos su nombre real, ya sea Mozo o Chef
     document.getElementById('nombreUsuario').textContent = `${usuarioLogueado.nombre} (${usuarioLogueado.rol})`;
 

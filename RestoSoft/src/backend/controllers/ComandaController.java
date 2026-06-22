@@ -50,12 +50,14 @@ public class ComandaController {
             return ResponseEntity.badRequest().body("Error: Mesa o Usuario no encontrados.");
         }
 
-        // A. Guardamos la cabecera del pedido
+      // A. Guardamos la cabecera del pedido
         Comanda nuevaComanda = new Comanda();
         nuevaComanda.setMesa(mesaOpt.get());
         nuevaComanda.setUsuario(usuarioOpt.get());
         nuevaComanda.setEstado(EstadoComanda.PENDIENTE); 
-       // nuevaComanda.setIdInstancia(1); // Solución al error de restricción de MySQL
+        
+        // Asignamos el valor que viaja desde el Frontend
+        nuevaComanda.setIdInstancia(request.idInstancia); 
         
         Comanda comandaGuardada = comandaRepository.save(nuevaComanda);
 
@@ -90,6 +92,12 @@ public class ComandaController {
     public List<Comanda> obtenerTodasLasComandas() {
         return comandaRepository.findAll();
     }
+    @GetMapping("/instancia/{idInstancia}")
+    public ResponseEntity<Comanda> obtenerComandaPorInstancia(@PathVariable Integer idInstancia) {
+        return comandaRepository.findByIdInstancia(idInstancia)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
 
     // 3. Endpoint para agregar un plato a una comanda específica
     @PostMapping("/{idComanda}/items")
@@ -117,10 +125,11 @@ public class ComandaController {
         }
     }
 
-    // --- CLASES AUXILIARES (DTOs) ---
+   // --- CLASES AUXILIARES (DTOs) ---
     public static class ComandaRequest {
         public Integer idMesa;
         public Integer idUsuario;
+        public Integer idInstancia;
         public List<ItemRequest> detalles;
     }
 

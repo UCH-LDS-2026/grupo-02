@@ -255,3 +255,13 @@ body {
     font-size: 0.85rem;
     font-style: italic;
 }
+
+@keyframes parpadear {
+    0% { box-shadow: 0 0 5px #10b981; }
+    50% { box-shadow: 0 0 20px #10b981; transform: scale(1.02); }
+    100% { box-shadow: 0 0 5px #10b981; }
+}
+
+.parpadeo-listo {
+    animation: parpadear 1.5s infinite;
+}

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 20-06-2026 a las 05:35:46
+-- Tiempo de generación: 22-06-2026 a las 00:22:10
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -65,19 +65,12 @@ INSERT INTO `categoria_producto` (`id_categoria`, `nombre`, `descripcion`) VALUE
 
 CREATE TABLE `comanda` (
   `id_comanda` int(11) NOT NULL,
-  `id_instancia` int(11) DEFAULT NULL,
+  `id_instancia` int(11) NOT NULL,
   `fecha_creacion` datetime DEFAULT current_timestamp(),
   `estado` enum('PENDIENTE','EN_PRODUCCION','LISTO','ENTREGADO') DEFAULT 'PENDIENTE',
   `id_mesa` int(11) NOT NULL,
   `id_usuario` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `comanda`
---
-
-INSERT INTO `comanda` (`id_comanda`, `id_instancia`, `fecha_creacion`, `estado`, `id_mesa`, `id_usuario`) VALUES
-(8, NULL, '2026-06-20 03:26:23', 'PENDIENTE', 1, 5);
 
 -- --------------------------------------------------------
 
@@ -102,11 +95,26 @@ CREATE TABLE `factura` (
 
 CREATE TABLE `historial_mesa` (
   `id` int(11) NOT NULL,
-  `estado_anterior` enum('LIBRE','OCUPADA','PEDIDO_EN_CURSO','EN_MESA','POR_COBRAR') DEFAULT NULL,
-  `estado_nuevo` enum('LIBRE','OCUPADA','PEDIDO_EN_CURSO','EN_MESA','POR_COBRAR') NOT NULL,
+  `estado_anterior` enum('LIBRE','OCUPADA','PEDIDO_EN_CURSO','POR_COBRAR') DEFAULT NULL,
+  `estado_nuevo` enum('LIBRE','OCUPADA','PEDIDO_EN_CURSO','POR_COBRAR') NOT NULL,
   `timestamp_cambio` datetime(6) NOT NULL,
   `mesa_id` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `historial_mesa`
+--
+
+INSERT INTO `historial_mesa` (`id`, `estado_anterior`, `estado_nuevo`, `timestamp_cambio`, `mesa_id`) VALUES
+(1, 'LIBRE', 'OCUPADA', '2026-06-12 21:53:13.000000', 1),
+(2, 'LIBRE', 'OCUPADA', '2026-06-12 21:53:13.000000', 2),
+(3, 'OCUPADA', 'LIBRE', '2026-06-12 21:53:16.000000', 4),
+(4, 'POR_COBRAR', 'LIBRE', '2026-06-12 21:53:16.000000', 6),
+(5, 'OCUPADA', 'LIBRE', '2026-06-13 00:31:01.000000', 2),
+(6, 'LIBRE', 'LIBRE', '2026-06-13 00:31:01.000000', 2),
+(7, 'LIBRE', 'OCUPADA', '2026-06-13 01:46:53.000000', 3),
+(8, 'LIBRE', 'OCUPADA', '2026-06-13 01:46:54.000000', 6),
+(9, 'OCUPADA', 'LIBRE', '2026-06-13 01:46:56.000000', 1);
 
 -- --------------------------------------------------------
 
@@ -123,6 +131,13 @@ CREATE TABLE `instancia_mesa` (
   `estado_actual` varchar(50) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Volcado de datos para la tabla `instancia_mesa`
+--
+
+INSERT INTO `instancia_mesa` (`id_instancia`, `id_mesa`, `id_mozo`, `fecha_apertura`, `fecha_cierre`, `estado_actual`) VALUES
+(1, 1, 1, '2026-06-05 20:28:56', NULL, 'LIBRE');
+
 -- --------------------------------------------------------
 
 --
@@ -138,13 +153,6 @@ CREATE TABLE `item_comanda` (
   `observaciones` varchar(255) DEFAULT NULL,
   `comentario` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `item_comanda`
---
-
-INSERT INTO `item_comanda` (`id_item`, `id_comanda`, `id_producto`, `cantidad`, `subtotal`, `observaciones`, `comentario`) VALUES
-(2, 8, 1, 1, 6500.00, NULL, '');
 
 -- --------------------------------------------------------
 
@@ -164,7 +172,12 @@ CREATE TABLE `mesa` (
 --
 
 INSERT INTO `mesa` (`id_mesa`, `numero_mesa`, `capacidad`, `estado`) VALUES
-(1, 1, 4, 'OCUPADA');
+(1, 1, 2, 'LIBRE'),
+(2, 2, 2, 'LIBRE'),
+(3, 3, 4, 'OCUPADA'),
+(4, 4, 4, 'LIBRE'),
+(5, 5, 6, 'PEDIDO_EN_CURSO'),
+(6, 6, 8, 'OCUPADA');
 
 -- --------------------------------------------------------
 
@@ -213,7 +226,7 @@ CREATE TABLE `usuario` (
 INSERT INTO `usuario` (`id_usuario`, `nombre`, `apellido`, `email`, `password`, `rol`, `activo`) VALUES
 (1, 'Mozo', 'Prueba', 'mozo@restosoft.com', '1234', 'MOZO', 1),
 (2, 'Milagros', 'Gerente', 'admin@restosoft.com', 'admin123', 'ADMIN', 1),
-(3, 'Carlos', 'Chef', 'cocina@restosoft.com', 'cocina123', '', 1),
+(3, 'Carlos', 'Chef', 'cocina@restosoft.com', 'cocina123', 'COCINA', 1),
 (5, 'Juan', 'Mozo', 'juan@restosoft.com', '1234', 'MOZO', 1);
 
 --
@@ -375,7 +388,8 @@ ALTER TABLE `auditoria_estado`
 --
 ALTER TABLE `comanda`
   ADD CONSTRAINT `FKdysjuh9mxdsspefp3dqh9csra` FOREIGN KEY (`id_mesa`) REFERENCES `mesa` (`id_mesa`),
-  ADD CONSTRAINT `FKsdwoudan60ymltuh0p0brcduf` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id_usuario`);
+  ADD CONSTRAINT `FKsdwoudan60ymltuh0p0brcduf` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id_usuario`),
+  ADD CONSTRAINT `comanda_ibfk_1` FOREIGN KEY (`id_instancia`) REFERENCES `instancia_mesa` (`id_instancia`);
 
 --
 -- Filtros para la tabla `factura`
