@@ -8,12 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
         window.location.href = 'index.html';
         return; 
     }
-
-    const navAdmin = document.getElementById('navAdmin');
-    if (navAdmin && (usuarioLogueadoGlobal.rol === 'MOZO' || usuarioLogueadoGlobal.rol === 'COCINA')) {
-        navAdmin.style.display = 'none';
-    }
-
+    
     // Le mostramos su nombre real, ya sea Mozo o Chef
     document.getElementById('nombreUsuario').textContent = `${usuarioLogueado.nombre} (${usuarioLogueado.rol})`;
 
@@ -21,6 +16,11 @@ document.addEventListener("DOMContentLoaded", () => {
         localStorage.removeItem('usuarioLogueado');
         window.location.href = 'index.html';
     });
+
+    const navAdmin = document.querySelector('a[href="administracion.html"]');
+    if (navAdmin && (usuarioLogueado.rol === 'MOZO' || usuarioLogueado.rol === 'COCINA')) {
+        navAdmin.style.display = 'none';
+    }
 
     // 2. CARGAR EL TABLERO INICIAL
     cargarTablero();

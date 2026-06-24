@@ -1,11 +1,13 @@
 package backend.controllers;
 
+import backend.models.AuditoriaEstado;
 import backend.models.Comanda;
 import backend.models.EstadoComanda;
 import backend.models.ItemComanda;
 import backend.models.Mesa;
 import backend.models.Producto;
 import backend.models.Usuario;
+import backend.repositories.AuditoriaEstadoRepository;
 import backend.repositories.ComandaRepository;
 import backend.repositories.ItemComandaRepository;
 import backend.repositories.MesaRepository;
@@ -38,6 +40,9 @@ public class ComandaController {
 
     @Autowired
     private ProductoRepository productoRepository;
+
+    @Autowired
+    private AuditoriaEstadoRepository auditoriaEstadoRepository;
 
     // 1. Endpoint que recibe el JSON, arma la cabecera y calcula los subtotales automáticamente
     @PostMapping
@@ -92,11 +97,15 @@ public class ComandaController {
     public List<Comanda> obtenerTodasLasComandas() {
         return comandaRepository.findAll();
     }
+  // Endpoint para buscar TODAS las comandas de una instancia específica
     @GetMapping("/instancia/{idInstancia}")
-    public ResponseEntity<Comanda> obtenerComandaPorInstancia(@PathVariable Integer idInstancia) {
-        return comandaRepository.findByIdInstancia(idInstancia)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<List<Comanda>> obtenerComandasPorInstancia(@PathVariable Integer idInstancia) {
+        List<Comanda> todas = comandaRepository.findAll();
+        List<Comanda> deInstancia = todas.stream()
+                .filter(c -> c.getIdInstancia() != null && c.getIdInstancia().equals(idInstancia))
+                .toList();
+        
+        return ResponseEntity.ok(deInstancia);
     }
 
     // 3. Endpoint para agregar un plato a una comanda específica
@@ -125,6 +134,39 @@ public class ComandaController {
         }
     }
 
+    // 5. Endpoint para "Borrado Lógico" (cancelar un ítem)
+    @PutMapping("/items/{idItem}/cancelar")
+    public ResponseEntity<?> cancelarItemDeComanda(
+            @PathVariable Integer idItem,
+            @RequestParam Integer idUsuario,
+            @RequestParam String motivo) {
+
+        Optional<ItemComanda> itemOpt = itemComandaRepository.findById(idItem);
+        Optional<Usuario> usuarioOpt = usuarioRepository.findById(idUsuario);
+
+        if (itemOpt.isEmpty() || usuarioOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body("Error: Ítem o Usuario no encontrado.");
+        }
+
+        ItemComanda item = itemOpt.get();
+        Comanda comanda = item.getComanda();
+        Producto producto = item.getProducto();
+
+        // A. Crear registro de Auditoría
+        AuditoriaEstado auditoria = new AuditoriaEstado();
+        auditoria.setIdInstancia(comanda.getIdInstancia());
+        auditoria.setEstadoAnterior("ITEM: " + producto.getNombre() + " (x" + item.getCantidad() + ")");
+        auditoria.setEstadoNuevo("CANCELADO LÓGICAMENTE");
+        auditoria.setMotivoContingencia(motivo);
+        auditoria.setUsuarioResponsable(usuarioOpt.get().getId()); 
+        auditoriaEstadoRepository.save(auditoria);
+
+        // B. Borrado Lógico:
+        item.setCancelado(true);
+        itemComandaRepository.save(item);
+
+        return ResponseEntity.ok("Ítem cancelado correctamente");
+    }
    // --- CLASES AUXILIARES (DTOs) ---
     public static class ComandaRequest {
         public Integer idMesa;

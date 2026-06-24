@@ -31,6 +31,9 @@ public class ItemComanda {
     @Column(length = 255)
     private String comentario;
 
+     @Column(name = "cancelado", columnDefinition = "boolean default false")
+    private Boolean cancelado = false;
+    
     // Getters y Setters
     public Integer getIdItem() { return idItem; }
     public void setIdItem(Integer idItem) { this.idItem = idItem; }
@@ -49,4 +52,7 @@ public class ItemComanda {
 
     public String getComentario() { return comentario; }
     public void setComentario(String comentario) { this.comentario = comentario; }
+
+    public Boolean getCancelado() { return cancelado; }
+    public void setCancelado(Boolean cancelado) { this.cancelado = cancelado; }
 }
