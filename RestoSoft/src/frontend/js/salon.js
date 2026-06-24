@@ -57,18 +57,35 @@ document.addEventListener("DOMContentLoaded", () => {
         mesaSeleccionada = null;
         carritoPreview = [];
         renderizarPreview();
+
+        const buscador = document.getElementById('buscadorProducto');
+        if (buscador) buscador.value = "";
     });
 
     // 7. EVENTOS DE APERTURA Y COMANDAS
     document.getElementById('btnAbrirMesa').addEventListener('click', abrirMesa);
 
-    document.getElementById('selectProducto').addEventListener('change', (event) => {
-        const idProducto = event.target.value;
-        if (idProducto) {
-            agregarAlPreview(idProducto);
-            event.target.value = "";
-        }
-    });
+    const buscadorProducto = document.getElementById('buscadorProducto');
+    const listaResultados = document.getElementById('listaResultadosBusqueda');
+
+    if (buscadorProducto && listaResultados) {
+        // Al escribir, filtramos
+        buscadorProducto.addEventListener('input', (event) => {
+            renderizarOpcionesBusqueda(event.target.value);
+        });
+
+        // Al hacer clic en el buscador, mostramos la lista completa o filtrada
+        buscadorProducto.addEventListener('focus', () => {
+            renderizarOpcionesBusqueda(buscadorProducto.value);
+        });
+
+        // Si el usuario hace clic en cualquier otro lado de la pantalla, cerramos la lista
+        document.addEventListener('click', (e) => {
+            if (!buscadorProducto.contains(e.target) && !listaResultados.contains(e.target)) {
+                listaResultados.style.display = 'none';
+            }
+        });
+    }
 
     document.getElementById('btnCancelarPreview').addEventListener('click', () => {
         carritoPreview = [];
@@ -84,15 +101,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
 async function cargarMesas() {
     try {
-        // Obtenemos las mesas
         const response = await fetch('http://localhost:8080/api/mesas');
         const mesas = await response.json();
 
-        // Obtenemos las comandas para ver si alguna está "LISTO"
         const responseComandas = await fetch('http://localhost:8080/api/comandas');
         const comandas = await responseComandas.json();
 
-        // Filtramos qué IDs de mesa tienen pedidos listos
         const mesasConPedidosListos = comandas
             .filter(c => c.estado === 'LISTO')
             .map(c => c.mesa.idMesa);
@@ -109,7 +123,6 @@ async function cargarMesas() {
             else if (mesa.estado === 'PEDIDO_EN_CURSO') mesaCard.classList.add('mesa-pedido');
             else if (mesa.estado === 'POR_COBRAR') mesaCard.classList.add('mesa-cobrar');
 
-            // LÓGICA DE LA CAMPANITA
             let alertaHTML = '';
             if (mesasConPedidosListos.includes(mesa.idMesa)) {
                 mesaCard.style.border = '3px solid #10b981';
@@ -148,9 +161,18 @@ async function abrirPanelComanda(mesa) {
     faseVacia.style.display = 'none';
     faseContenido.style.display = 'flex';
 
-    // Limpiamos la preview temporal al cambiar de mesa
     carritoPreview = [];
     renderizarPreview();
+
+    if (document.getElementById('resumenMozo')) document.getElementById('resumenMozo').textContent = '-';
+    if (document.getElementById('resumenCliente')) document.getElementById('resumenCliente').textContent = '-';
+    if (document.getElementById('resumenHora')) document.getElementById('resumenHora').textContent = '-';
+    if (document.getElementById('resumenComensales')) document.getElementById('resumenComensales').textContent = '-';
+    
+    const listaConsumo = document.getElementById('listaConsumo');
+    if (listaConsumo) {
+        listaConsumo.innerHTML = '<p style="color:gray; text-align:center;">Cargando información de la mesa...</p>';
+    }
 
     if (mesa.estado === 'LIBRE') {
         faseApertura.style.display = 'block';
@@ -172,17 +194,14 @@ async function abrirPanelComanda(mesa) {
                 document.getElementById('resumenHora').textContent = new Date(instancia.fechaApertura).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 mesaSeleccionada.idInstanciaActual = instancia.idInstancia;
 
-                // Buscamos el consumo activo (los ítems que ya se enviaron en TODAS las comandas)
                 const resComanda = await fetch(`http://localhost:8080/api/comandas/instancia/${instancia.idInstancia}`);
-                const listaConsumo = document.getElementById('listaConsumo');
 
                 if (listaConsumo) {
-                    listaConsumo.innerHTML = ''; // Limpiamos la lista antes de llenarla
+                    listaConsumo.innerHTML = ''; 
 
                     if (resComanda.ok) {
-                        const comandasDeInstancia = await resComanda.json(); // Recibimos un Array
+                        const comandasDeInstancia = await resComanda.json(); 
 
-                        // Unificamos todos los items de todas las comandas en una sola lista
                         let todosLosItems = [];
                         comandasDeInstancia.forEach(comanda => {
                             if (comanda.items) {
@@ -191,16 +210,19 @@ async function abrirPanelComanda(mesa) {
                         });
 
                        if (todosLosItems.length > 0) {
+                            let totalConsumo = 0; 
+
                             todosLosItems.forEach(item => {
-                                // 1. Preguntamos si el ítem fue cancelado
                                 const isCancelado = item.cancelado === true;
                                 
-                                // 2. Definimos el estilo: si está cancelado, tachado y gris. Si no, normal.
+                                if (!isCancelado) {
+                                    totalConsumo += parseFloat(item.subtotal);
+                                }
+                                
                                 const estiloFila = isCancelado 
                                     ? "display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; padding:8px; background:#e5e7eb; border-radius:4px; text-decoration: line-through; color: #9ca3af;" 
                                     : "display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; padding:8px; background:#f3f4f6; border-radius:4px;";
                                 
-                                // 3. Definimos el botón: si está cancelado, mostramos un texto. Si no, la basurita.
                                 const accionHTML = isCancelado 
                                     ? `<span style="font-size:0.8rem; font-style:italic; color: #ef4444;">Cancelado</span>` 
                                     : `<button onclick="borrarItemConsumo(${item.idItem})" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:1.2rem;" title="Cancelar Pedido">🗑️</button>`;
@@ -215,6 +237,14 @@ async function abrirPanelComanda(mesa) {
                                     </li>
                                 `;
                             });
+
+                            listaConsumo.innerHTML += `
+                                <li style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding-top:10px; border-top: 2px solid #ccc; font-weight: bold; font-size: 1.1rem;">
+                                    <span>SUBTOTAL MESA</span>
+                                    <span>$${totalConsumo.toFixed(2)}</span>
+                                </li>
+                            `;
+
                         } else {
                             listaConsumo.innerHTML = '<p style="color:gray;">No hay consumo registrado.</p>';
                         }
@@ -222,9 +252,13 @@ async function abrirPanelComanda(mesa) {
                         listaConsumo.innerHTML = '<p style="color:gray;">No hay consumo registrado.</p>';
                     }
                 }
+            } else {
+                // Si la mesa no tiene instancia activa, la limpiamos explícitamente
+                if(listaConsumo) listaConsumo.innerHTML = '<p style="color:gray;">No hay consumo registrado.</p>';
             }
         } catch (e) {
             console.log("No se pudo obtener la instancia activa o el consumo", e);
+            if(listaConsumo) listaConsumo.innerHTML = '<p style="color:red;">Falla de conexión al cargar el historial.</p>';
         }
 
         faseApertura.style.display = 'none';
@@ -247,13 +281,10 @@ async function abrirMesa() {
 
         if (responseMesa.ok) {
             const data = await responseMesa.json();
-
             mesaSeleccionada.estado = 'OCUPADA';
-
             if (data.idInstanciaActiva) {
                 mesaSeleccionada.idInstanciaActual = data.idInstanciaActiva;
             }
-
             await cargarMesas();
             abrirPanelComanda(mesaSeleccionada);
         } else {
@@ -274,19 +305,52 @@ async function cargarMenu() {
     try {
         const response = await fetch('http://localhost:8080/api/productos');
         menuProductos = await response.json();
-
-        const selectProducto = document.getElementById('selectProducto');
-        selectProducto.innerHTML = '<option value="">Seleccione un producto...</option>';
-
-        menuProductos.forEach(producto => {
-            const option = document.createElement('option');
-            option.value = producto.idProducto;
-            option.textContent = `${producto.nombre} - $${producto.precio}`;
-            selectProducto.appendChild(option);
-        });
     } catch (error) {
         console.error("Error al cargar el menú:", error);
     }
+}
+
+// DIBUJA LA LISTA FLOTANTE DEL BUSCADOR
+function renderizarOpcionesBusqueda(filtroTexto = "") {
+    const listaResultados = document.getElementById('listaResultadosBusqueda');
+    if (!listaResultados) return;
+
+    listaResultados.innerHTML = '';
+    const textoBuscado = filtroTexto.toLowerCase().trim();
+
+    const productosFiltrados = menuProductos.filter(producto =>
+        producto.nombre.toLowerCase().includes(textoBuscado)
+    );
+
+    if (productosFiltrados.length === 0) {
+        listaResultados.innerHTML = '<li style="padding: 10px; color: #666; text-align: center;">No se encontraron productos</li>';
+        listaResultados.style.display = 'block';
+        return;
+    }
+
+    productosFiltrados.forEach(producto => {
+        const li = document.createElement('li');
+        li.textContent = `${producto.nombre} - $${producto.precio}`;
+        li.style.padding = '10px';
+        li.style.borderBottom = '1px solid #eee';
+        li.style.cursor = 'pointer';
+        li.style.transition = 'background-color 0.2s';
+
+        // Efecto hover
+        li.onmouseover = () => li.style.backgroundColor = '#f3f4f6';
+        li.onmouseout = () => li.style.backgroundColor = 'transparent';
+
+        // Acción al elegir el producto
+        li.addEventListener('click', () => {
+            agregarAlPreview(producto.idProducto);
+            document.getElementById('buscadorProducto').value = ''; // Limpiamos el buscador
+            listaResultados.style.display = 'none'; // Escondemos la lista
+        });
+
+        listaResultados.appendChild(li);
+    });
+
+    listaResultados.style.display = 'block'; // Mostramos la lista
 }
 
 function agregarAlPreview(idProductoBuscado) {
@@ -472,12 +536,10 @@ async function marcarComoComiendo() {
     if (!mesaSeleccionada) return;
 
     try {
-        // 1. Buscamos todas las comandas de esta instancia
         const resComanda = await fetch(`http://localhost:8080/api/comandas/instancia/${mesaSeleccionada.idInstanciaActual}`);
         if (resComanda.ok) {
             const comandas = await resComanda.json();
 
-            // 2. A todas las que estén en la bandeja listas, las pasamos a ENTREGADO
             for (let c of comandas) {
                 if (c.estado === 'LISTO') {
                     await fetch(`http://localhost:8080/api/comandas/${c.idComanda}/estado?nuevoEstado=ENTREGADO`, { method: 'PUT' });
@@ -488,32 +550,26 @@ async function marcarComoComiendo() {
         console.error("Error al avisar a cocina que se entregó el pedido", e);
     }
 
-    // 3. Cambiamos la mesa a OCUPADA (esto recarga las mesas y quita la campanita)
     cambiarEstadoMesaLocal('OCUPADA');
 }
 
 // --- FUNCION DE CANCELACIÓN DE ITEMS ---
 async function borrarItemConsumo(idItem) {
-    // Validación de seguridad para que nunca mande un undefined
     if (!idItem) {
         alert("No se puede identificar el ítem a cancelar.");
         return;
     }
 
-    // Obtenemos el ID correcto del usuario (probamos con .id y .idUsuario por las dudas)
     const userId = usuarioLogueadoGlobal.id || usuarioLogueadoGlobal.idUsuario;
     if (!userId) {
         alert("Error de sesión: No se encuentra el ID del usuario.");
         return;
     }
 
-    // 1. Pedimos el motivo al mozo
     const motivo = prompt("Por favor, ingrese el motivo de la cancelación:");
-    
-    // Si presiona "Cancelar" o la 'X' en la ventanita, cortamos la ejecución
-    if (motivo === null) return; 
-    
-    // Si no escribe nada y le da a Aceptar, lo retamos
+
+    if (motivo === null) return;
+
     if (motivo.trim() === "") {
         alert("¡Debe ingresar una justificación obligatoria para cancelar un producto!");
         return;
@@ -521,7 +577,7 @@ async function borrarItemConsumo(idItem) {
 
     try {
         const url = `http://localhost:8080/api/comandas/items/${idItem}/cancelar?idUsuario=${userId}&motivo=${encodeURIComponent(motivo)}`;
-        
+
         const response = await fetch(url, { method: 'PUT' });
 
         if (response.ok) {

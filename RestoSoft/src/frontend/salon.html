@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="css/global.css">
     <link rel="stylesheet" href="css/salon.css">
 </head>
+
 <body>
     <header class="top-header">
         <div class="header-left">
@@ -17,7 +19,7 @@
                 <a href="administracion.html" class="nav-item" id="navAdmin">Caja / Historial</a>
             </nav>
         </div>
-        
+
         <div class="user-info">
             <span id="nombreUsuario"></span>
             <button id="btnLogout" class="btn-outline">Cerrar Sesión</button>
@@ -25,9 +27,9 @@
     </header>
 
     <div class="dashboard-container">
-        
+
         <main class="mesas-section">
-            
+
             <div class="sector-tabs">
                 <button class="tab-btn active">Planta Baja</button>
                 <button class="tab-btn">Planta Alta</button>
@@ -35,11 +37,11 @@
             </div>
 
             <div id="gridMesas" class="mesas-grid">
-                </div>
+            </div>
         </main>
 
         <aside id="panelComanda" class="comanda-panel">
-            
+
             <div id="faseVacia" class="estado-vacio">
                 <p>&lt; Selecciona una mesa</p>
             </div>
@@ -49,9 +51,9 @@
                     <h3 id="tituloMesa">Mesa --</h3>
                     <button id="btnCerrarPanel" class="btn-close">X</button>
                 </div>
-                
+
                 <div class="panel-body">
-                    
+
                     <div id="faseApertura" style="display: none;">
                         <h4>Abrir Mesa</h4>
                         <br>
@@ -69,7 +71,8 @@
                             <label for="inputMozo">Mozo</label>
                             <div id="contenedorMozo"></div>
                         </div>
-                        <button id="btnAbrirMesa" class="btn-primary" style="margin-top: 1rem;">Confirmar Apertura</button>
+                        <button id="btnAbrirMesa" class="btn-primary" style="margin-top: 1rem;">Confirmar
+                            Apertura</button>
                     </div>
 
                     <div id="faseActiva" style="display: none;">
@@ -80,18 +83,19 @@
                             <p><strong>Comensales:</strong> <span id="resumenComensales">-</span></p>
                         </div>
                         <hr class="divider">
-                        <div class="pedidos-actuales">
-                            <h4>Consumo Actual</h4>
-                            <ul id="listaConsumo" class="lista-items"></ul>
-                        </div>
-                        <hr class="divider">
                         <div class="seccion-agregar">
                             <h4>Agregar al Pedido</h4>
                             <br>
                             <div class="input-group">
-                                <select id="selectProducto">
-                                    <option value="">Seleccione un producto...</option>
-                                </select>
+                                <div style="position: relative; margin-bottom: 15px;">
+                                    <input type="text" id="buscadorProducto"
+                                        placeholder="🔍 Buscar y seleccionar producto..." autocomplete="off"
+                                        style="width:100%; padding: 0.6rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 1rem;">
+
+                                    <ul id="listaResultadosBusqueda"
+                                        style="display: none; position: absolute; z-index: 1000; width: 100%; max-height: 250px; overflow-y: auto; background: white; border: 1px solid #ccc; border-radius: 4px; margin-top: 2px; padding: 0; list-style: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                                    </ul>
+                                </div>
                             </div>
                             <div class="preview-pedido" id="previewPedido">
                                 <ul id="listaPreview" class="lista-items"></ul>
@@ -100,10 +104,16 @@
                                 <button id="btnCancelarPreview" class="btn-danger">Cancelar</button>
                                 <button id="btnConfirmarPedido" class="btn-success">Enviar a Cocina</button>
                             </div>
+                            <div class="pedidos-actuales">
+                            <h4>Consumo Actual</h4>
+                            <ul id="listaConsumo" class="lista-items"></ul>
+                        </div>
+                        <hr class="divider">
+                        
                         </div>
                     </div>
                 </div>
-                
+
                 <div id="panelFooterAcciones" class="panel-footer" style="display: none;">
                     <button id="btnEstadoComiendo" class="btn-warning">Comiendo</button>
                     <button id="btnEstadoCobrar" class="btn-info">Pedir Cuenta (Imprimir)</button>
@@ -115,4 +125,5 @@
 
     <script src="js/salon.js"></script>
 </body>
+
 </html>
