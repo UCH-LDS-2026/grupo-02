@@ -29,8 +29,11 @@ public class ItemComanda {
     private BigDecimal subtotal;
 
     @Column(length = 255)
-    private String observaciones;
+    private String comentario;
 
+     @Column(name = "cancelado", columnDefinition = "boolean default false")
+    private Boolean cancelado = false;
+    
     // Getters y Setters
     public Integer getIdItem() { return idItem; }
     public void setIdItem(Integer idItem) { this.idItem = idItem; }
@@ -47,6 +50,9 @@ public class ItemComanda {
     public BigDecimal getSubtotal() { return subtotal; }
     public void setSubtotal(BigDecimal subtotal) { this.subtotal = subtotal; }
 
-    public String getObservaciones() { return observaciones; }
-    public void setObservaciones(String observaciones) { this.observaciones = observaciones; }
+    public String getComentario() { return comentario; }
+    public void setComentario(String comentario) { this.comentario = comentario; }
+
+    public Boolean getCancelado() { return cancelado; }
+    public void setCancelado(Boolean cancelado) { this.cancelado = cancelado; }
 }

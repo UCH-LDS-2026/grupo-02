@@ -1,5 +1,5 @@
 package backend.models;
 
 public enum RolUsuario {
-    ADMIN, MOZO, CAJERO, COCINERO
+    ADMIN, MOZO, CAJERO, COCINA
 }

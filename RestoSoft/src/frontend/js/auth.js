@@ -7,39 +7,36 @@ document.getElementById('loginForm').addEventListener('submit', async (event) =>
     const password = document.getElementById('password').value;
     const errorMessage = document.getElementById('errorMessage');
 
-    // Ocultamos el error por si quedó prendido de un intento anterior
     errorMessage.style.display = 'none';
 
     try {
         // 3. Hacemos la petición a tu API en Spring Boot
-        // Recordá que configuramos Java para recibir los datos en la URL (@RequestParam)
         const response = await fetch(`http://localhost:8080/api/auth/login?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`, {
             method: 'POST'
         });
 
         // 4. Si el login es exitoso (Código 200)
         if (response.ok) {
-            const usuario = await response.json();
+            const usuario = await response.json(); 
             
-            // Guardamos los datos del usuario en la memoria del navegador
+            // Guardamos el usuario
             localStorage.setItem('usuarioLogueado', JSON.stringify(usuario));
-
-            // ¡Acá está la magia de los roles! Redirigimos según quién entró
-            if (usuario.rol === 'MOZO') {
-                window.location.href = 'salon.html';
-            } else if (usuario.rol === 'COCINERO') {
+            
+            // Redirigimos inteligentemente según el rol
+            if (usuario.rol === 'COCINA') {
                 window.location.href = 'cocina.html';
-            } else if (usuario.rol === 'ADMIN' || usuario.rol === 'CAJERO') {
-                window.location.href = 'administracion.html';
-            } else {
-                window.location.href = 'salon.html'; // Default por si acaso
+            } else{
+                 window.location.href = 'salon.html'; 
             }
         } else {
-            // 5. Si Java devuelve 401 Unauthorized, mostramos el texto rojo
+            const mensajeError = await response.text();
+            
+            // Mostramos el mensaje de error visual dinámico
             errorMessage.style.display = 'block';
+            errorMessage.textContent = mensajeError || 'Usuario o contraseña incorrectos';
         }
     } catch (error) {
         console.error("Error de conexión:", error);
-        alert("No se pudo conectar con el servidor. ¿Asegurate de que Spring Boot esté corriendo (Run)?");
+        alert("No se pudo conectar con el servidor. Por favor, intentá más tarde.");
     }
 });

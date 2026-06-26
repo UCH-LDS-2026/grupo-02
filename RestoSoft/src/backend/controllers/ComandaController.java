@@ -1,13 +1,25 @@
 package backend.controllers;
 
+import backend.models.AuditoriaEstado;
 import backend.models.Comanda;
+import backend.models.EstadoComanda;
 import backend.models.ItemComanda;
+import backend.models.Mesa;
+import backend.models.Producto;
+import backend.models.Usuario;
+import backend.repositories.AuditoriaEstadoRepository;
 import backend.repositories.ComandaRepository;
 import backend.repositories.ItemComandaRepository;
+import backend.repositories.MesaRepository;
+import backend.repositories.ProductoRepository;
+import backend.repositories.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/comandas")
@@ -17,14 +29,67 @@ public class ComandaController {
     @Autowired
     private ComandaRepository comandaRepository;
 
-    // Agregamos el repositorio de los ítems
     @Autowired
     private ItemComandaRepository itemComandaRepository;
 
-    // 1. Endpoint para crear la cabecera del pedido (El que ya probaste)
+    @Autowired
+    private MesaRepository mesaRepository;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private ProductoRepository productoRepository;
+
+    @Autowired
+    private AuditoriaEstadoRepository auditoriaEstadoRepository;
+
+    // 1. Endpoint que recibe el JSON, arma la cabecera y calcula los subtotales automáticamente
     @PostMapping
-    public Comanda crearComanda(@RequestBody Comanda nuevaComanda) {
-        return comandaRepository.save(nuevaComanda);
+    public ResponseEntity<?> crearComanda(@RequestBody ComandaRequest request) {
+        
+        Optional<Mesa> mesaOpt = mesaRepository.findById(request.idMesa);
+        Optional<Usuario> usuarioOpt = usuarioRepository.findById(request.idUsuario);
+
+        if (mesaOpt.isEmpty() || usuarioOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body("Error: Mesa o Usuario no encontrados.");
+        }
+
+      // A. Guardamos la cabecera del pedido
+        Comanda nuevaComanda = new Comanda();
+        nuevaComanda.setMesa(mesaOpt.get());
+        nuevaComanda.setUsuario(usuarioOpt.get());
+        nuevaComanda.setEstado(EstadoComanda.PENDIENTE); 
+        
+        // Asignamos el valor que viaja desde el Frontend
+        nuevaComanda.setIdInstancia(request.idInstancia); 
+        
+        Comanda comandaGuardada = comandaRepository.save(nuevaComanda);
+
+        // B. Recorremos los detalles, calculamos el subtotal de cada uno y guardamos
+        for (ItemRequest itemReq : request.detalles) {
+            Optional<Producto> prodOpt = productoRepository.findById(itemReq.idProducto);
+            
+            if (prodOpt.isPresent()) {
+                Producto producto = prodOpt.get();
+                
+                ItemComanda nuevoItem = new ItemComanda();
+                nuevoItem.setComanda(comandaGuardada);
+                nuevoItem.setProducto(producto);
+                nuevoItem.setCantidad(itemReq.cantidad);
+                nuevoItem.setComentario(itemReq.comentarios);
+                
+                BigDecimal precioProducto = producto.getPrecio(); 
+                BigDecimal cantidadItems = BigDecimal.valueOf(itemReq.cantidad);
+                BigDecimal subtotalCalculado = precioProducto.multiply(cantidadItems);
+                
+                nuevoItem.setSubtotal(subtotalCalculado);
+                
+                itemComandaRepository.save(nuevoItem);
+            }
+        }
+
+        return ResponseEntity.ok(comandaGuardada);
     }
 
     // 2. Endpoint para ver todos los pedidos
@@ -32,33 +97,87 @@ public class ComandaController {
     public List<Comanda> obtenerTodasLasComandas() {
         return comandaRepository.findAll();
     }
+  // Endpoint para buscar TODAS las comandas de una instancia específica
+    @GetMapping("/instancia/{idInstancia}")
+    public ResponseEntity<List<Comanda>> obtenerComandasPorInstancia(@PathVariable Integer idInstancia) {
+        List<Comanda> todas = comandaRepository.findAll();
+        List<Comanda> deInstancia = todas.stream()
+                .filter(c -> c.getIdInstancia() != null && c.getIdInstancia().equals(idInstancia))
+                .toList();
+        
+        return ResponseEntity.ok(deInstancia);
+    }
 
     // 3. Endpoint para agregar un plato a una comanda específica
     @PostMapping("/{idComanda}/items")
     public ItemComanda agregarItemAComanda(@PathVariable Integer idComanda, @RequestBody ItemComanda nuevoItem) {
-        // Buscamos la comanda en la base de datos
         Comanda comanda = comandaRepository.findById(idComanda).orElseThrow();
-        
-        // Le decimos al plato a qué ticket pertenece
         nuevoItem.setComanda(comanda);
-        
-        // Lo guardamos
         return itemComandaRepository.save(nuevoItem);
     }
+
+    // 4. Endpoint para cambiar el estado general del ticket
     @PutMapping("/{id}/estado")
-    public org.springframework.http.ResponseEntity<Comanda> cambiarEstadoComanda(
+    public ResponseEntity<Comanda> cambiarEstadoComanda(
             @PathVariable Integer id, 
-            @RequestParam backend.models.EstadoComanda nuevoEstado) {
+            @RequestParam EstadoComanda nuevoEstado) {
         
-        java.util.Optional<Comanda> comandaOptional = comandaRepository.findById(id);
+        Optional<Comanda> comandaOptional = comandaRepository.findById(id);
 
         if (comandaOptional.isPresent()) {
             Comanda comanda = comandaOptional.get();
             comanda.setEstado(nuevoEstado);
             comandaRepository.save(comanda);
-            return org.springframework.http.ResponseEntity.ok(comanda);
+            return ResponseEntity.ok(comanda);
         } else {
-            return org.springframework.http.ResponseEntity.notFound().build();
+            return ResponseEntity.notFound().build();
         }
+    }
+
+    // 5. Endpoint para "Borrado Lógico" (cancelar un ítem)
+    @PutMapping("/items/{idItem}/cancelar")
+    public ResponseEntity<?> cancelarItemDeComanda(
+            @PathVariable Integer idItem,
+            @RequestParam Integer idUsuario,
+            @RequestParam String motivo) {
+
+        Optional<ItemComanda> itemOpt = itemComandaRepository.findById(idItem);
+        Optional<Usuario> usuarioOpt = usuarioRepository.findById(idUsuario);
+
+        if (itemOpt.isEmpty() || usuarioOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body("Error: Ítem o Usuario no encontrado.");
+        }
+
+        ItemComanda item = itemOpt.get();
+        Comanda comanda = item.getComanda();
+        Producto producto = item.getProducto();
+
+        // A. Crear registro de Auditoría
+        AuditoriaEstado auditoria = new AuditoriaEstado();
+        auditoria.setIdInstancia(comanda.getIdInstancia());
+        auditoria.setEstadoAnterior("ITEM: " + producto.getNombre() + " (x" + item.getCantidad() + ")");
+        auditoria.setEstadoNuevo("CANCELADO LÓGICAMENTE");
+        auditoria.setMotivoContingencia(motivo);
+        auditoria.setUsuarioResponsable(usuarioOpt.get().getId()); 
+        auditoriaEstadoRepository.save(auditoria);
+
+        // B. Borrado Lógico:
+        item.setCancelado(true);
+        itemComandaRepository.save(item);
+
+        return ResponseEntity.ok("Ítem cancelado correctamente");
+    }
+   // --- CLASES AUXILIARES (DTOs) ---
+    public static class ComandaRequest {
+        public Integer idMesa;
+        public Integer idUsuario;
+        public Integer idInstancia;
+        public List<ItemRequest> detalles;
+    }
+
+    public static class ItemRequest {
+        public Integer idProducto;
+        public Integer cantidad;
+        public String comentarios;
     }
 }

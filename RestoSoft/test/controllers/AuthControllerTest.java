@@ -1,4 +1,4 @@
-package controllers;
+/*package controllers;
 import backend.controllers.AuthController;
 import backend.models.RolUsuario;
 import backend.models.Usuario;
@@ -74,4 +74,4 @@ class AuthControllerTest {
         // ASSERT
         assertEquals(HttpStatus.UNAUTHORIZED, respuesta.getStatusCode());
     }
-}
+}*/

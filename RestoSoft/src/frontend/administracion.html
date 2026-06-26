@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RestoSoft - Administración</title>
+    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="css/administracion.css">
+
+</head>
+
+<body>
+    <header class="top-header">
+        <div class="header-left">
+            <span class="logo">RestoSoft</span>
+            <nav class="main-nav">
+                <a href="salon.html" class="nav-item">Mesas</a>
+                <a href="cocina.html" class="nav-item">Cocina</a>
+                <a href="administracion.html" class="nav-item active">Caja / Historial</a>
+            </nav>
+        </div>
+        <div class="user-info">
+            <span id="nombreUsuario"></span>
+            <button id="btnLogout" class="btn-danger" style="margin-left: 1rem; padding: 0.3rem 0.8rem;">Cerrar
+                Sesion</button>
+        </div>
+    </header>
+
+    <div class="admin-layout">
+        <aside class="sidebar">
+            <a href="#" class="sidebar-link active" data-target="sec-caja">💰 Caja y Cobros</a>
+            <a href="#" class="sidebar-link" data-target="sec-arqueo">📊 Arqueo de Caja</a>
+            <a href="#" class="sidebar-link" data-target="sec-salon">🗺️ Editor de Salón</a>
+            <a href="#" class="sidebar-link" data-target="sec-menu">🍔 Menú y Precios</a>
+            <a href="#" class="sidebar-link" data-target="sec-usuarios">👥 Usuarios y Clientes</a>
+        </aside>
+
+        <main class="main-content">
+
+            <section id="sec-caja" class="admin-section active">
+                <h2 style="margin-bottom: 20px;">Caja y Cobros</h2>
+
+                <div class="caja-grid">
+                    <div class="panel-blanco">
+                        <h3 style="margin-bottom: 15px; color: #ef4444;">Esperando Cobro</h3>
+                        <div id="listaMesasCobrar">
+                        </div>
+                    </div>
+
+                    <div class="panel-blanco" id="panelDetalleCobro" style="display: none;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; margin-bottom: 15px;">
+                            <h3 style="margin: 0;">Detalle Mesa <span id="cobroNroMesa"></span></h3>
+                            <span id="cobroMozo" style="color: gray; font-size: 0.9rem;"></span>
+                        </div>
+
+                        <ul id="cobroListaItems" class="lista-items" style="max-height: 300px; overflow-y: auto;">
+                        </ul>
+                        <div style="margin-top: 15px;">
+                            <label style="font-weight: bold; display: block; margin-bottom: 8px;">Cliente (Aplicar
+                                Descuento)</label>
+                            <select id="selectClienteCobro"
+                                style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+                                <option value="0">Consumidor Final (0%)</option>
+                            </select>
+                        </div>
+
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; background: #f3f4f6; padding: 15px; border-radius: 6px; margin-top: 15px;">
+                            <span style="font-size: 1.2rem; font-weight: bold;">TOTAL A COBRAR</span>
+                            <div style="text-align: right;">
+                                <div id="cobroSubtotalOriginal"
+                                    style="font-size: 0.9rem; color: #ef4444; text-decoration: line-through; display: none;">
+                                    $0.00</div>
+                                <span id="cobroTotalMesa"
+                                    style="font-size: 1.5rem; font-weight: bold; color: #10b981;">$0.00</span>
+                            </div>
+                        </div>
+                        <div style="margin-top: 20px;">
+                            <label style="font-weight: bold; display: block; margin-bottom: 8px;">Método de Pago</label>
+                            <select id="selectMetodoPago"
+                                style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+                                <option value="EFECTIVO">Efectivo</option>
+                                <option value="TARJETA_DEBITO">Tarjeta de Débito</option>
+                                <option value="TARJETA_CREDITO">Tarjeta de Crédito</option>
+                                <option value="MERCADO_PAGO">Mercado Pago / Transferencia</option>
+                            </select>
+                        </div>
+
+                        <button id="btnRegistrarCobro" class="btn-success"
+                            style="width: 100%; padding: 15px; font-size: 1.1rem; margin-top: 20px;">
+                            ✅ Registrar Pago y Liberar Mesa
+                        </button>
+                    </div>
+                </div>
+            </section>
+            <section id="sec-arqueo" class="admin-section">
+
+                <h2 style="margin-bottom: 20px;">📊 Arqueo de Caja (Totales)</h2>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 40px;">
+                    <div class="panel-blanco" style="border-top: 4px solid #3b82f6; text-align: center;">
+                        <h3 style="color: #6b7280; font-size: 1rem;">Total Facturado</h3>
+                        <p id="arqueoTotal" style="font-size: 2rem; font-weight: bold; color: #1f2937;">$0.00</p>
+                    </div>
+                    <div class="panel-blanco" style="border-top: 4px solid #10b981; text-align: center;">
+                        <h3 style="color: #6b7280; font-size: 1rem;">Efectivo</h3>
+                        <p id="arqueoEfectivo" style="font-size: 1.5rem; font-weight: bold; color: #10b981;">$0.00</p>
+                    </div>
+                    <div class="panel-blanco" style="border-top: 4px solid #f59e0b; text-align: center;">
+                        <h3 style="color: #6b7280; font-size: 1rem;">Tarjetas</h3>
+                        <p id="arqueoTarjetas" style="font-size: 1.5rem; font-weight: bold; color: #f59e0b;">$0.00</p>
+                    </div>
+                    <div class="panel-blanco" style="border-top: 4px solid #8b5cf6; text-align: center;">
+                        <h3 style="color: #6b7280; font-size: 1rem;">Mercado Pago</h3>
+                        <p id="arqueoMP" style="font-size: 1.5rem; font-weight: bold; color: #8b5cf6;">$0.00</p>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2>📈 Historial de Ventas</h2>
+                    <button id="btnVerTiempos" class="btn-primary" style="width: auto;">⏱️ Analizar Tiempos de
+                        Mesas</button>
+                </div>
+
+                <div id="panelTiempos" class="panel-blanco"
+                    style="display: none; margin-bottom: 20px; border-left: 4px solid #f59e0b;">
+                    <h3>Registro de Tiempos y Demoras</h3>
+                    <table style="width: 100%; margin-top: 15px; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background-color: #f9fafb; border-bottom: 2px solid #e5e7eb;">
+                                <th style="padding: 10px;">Mesa</th>
+                                <th style="padding: 10px;">Transición</th>
+                                <th style="padding: 10px;">Hora Registrada</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaTiemposAdmin"></tbody>
+                    </table>
+                </div>
+
+                <div class="panel-blanco">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #e5e7eb; background-color: #f9fafb;">
+                                <th style="padding: 12px;">Ticket / Factura</th>
+                                <th style="padding: 12px;">Fecha y Hora</th>
+                                <th style="padding: 12px;">Método de Pago</th>
+                                <th style="padding: 12px; text-align: right;">Total Cobrado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaVentasAdmin"></tbody>
+                    </table>
+                </div>
+            </section>
+            <section id="sec-salon" class="admin-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2>Editor de Salón (Mapa Interactivo)</h2>
+                    <button id="btnGuardarMapa" class="btn-success">💾 Guardar Distribución</button>
+                </div>
+
+                <div class="tabs-mapa-container">
+                    <button class="tab-mapa tab-admin-mapa active" data-sector="Planta Baja">Planta Baja</button>
+                    <button class="tab-mapa tab-admin-mapa" data-sector="Planta Alta">Planta Alta</button>
+                    <button class="tab-mapa tab-admin-mapa" data-sector="Afuera">Afuera</button>
+
+                    <button id="btnEliminarMesaMapa" class="btn-danger" style="margin-left: auto; display: none;">🗑️
+                        Eliminar Mesa</button>
+                    <button id="btnAgregarMesaMapa" class="btn-anadir-mesa" style="margin-left: 10px;">+ Añadir
+                        Mesa</button>
+                </div>
+
+                <div style="display: flex; gap: 20px;">
+                    <div id="lienzoSalon"
+                        style="width: 800px; height: 600px; background-color: white; border: 2px solid #ccc; border-radius: 8px; position: relative; overflow: hidden; background-image: radial-gradient(#cbd5e1 2px, transparent 2px); background-size: 80px 80px;">
+                    </div>
+
+                    <div class="panel-blanco" style="flex: 1; height: fit-content;">
+                        <h3>Instrucciones</h3>
+                        <p style="color: #6b7280; font-size: 0.95rem; margin-top: 15px; line-height: 1.5;">
+                            1. Arrastrá las mesas por la cuadrícula para organizar el plano real de tu
+                            restaurante.<br><br>
+                            2. El lienzo cuenta con un sistema magnético (Snap) cada 50 píxeles para alinear todo a la
+                            perfección.<br><br>
+                            3. Al finalizar, hacé clic en el botón verde de Guardar para asentar los cambios en la base
+                            de datos.<br><br>
+                            <em>Nota: Las mesas nuevas aparecerán amontonadas en la esquina superior izquierda (0,0)
+                                hasta que las ubiques.</em>
+                        </p>
+                    </div>
+                </div>
+            </section>
+            <section id="sec-menu" class="admin-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2>Gestión de Menú y Precios</h2>
+                    <button id="btnNuevoProducto" class="btn-success">+ Nuevo Producto</button>
+                </div>
+
+                <div id="panelFormProducto" class="panel-blanco"
+                    style="display: none; margin-bottom: 20px; border-left: 4px solid #3b82f6;">
+                    <h3 id="tituloFormProducto" style="margin-bottom: 15px;">Añadir Producto</h3>
+                    <input type="hidden" id="formProductoId">
+
+                    <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                        <div style="flex: 2;">
+                            <label style="font-weight: bold; color: #4b5563;">Nombre del Producto</label>
+                            <input type="text" id="formProductoNombre" placeholder="Ej: Pizza Napolitana"
+                                style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin-top: 5px;">
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="font-weight: bold; color: #4b5563;">Precio ($)</label>
+                            <input type="number" id="formProductoPrecio" placeholder="0.00"
+                                style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin-top: 5px;">
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="font-weight: bold; color: #4b5563;">Categoría</label>
+                            <select id="formProductoCategoria"
+                                style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin-top: 5px;">
+                                <option value="1">Combos</option>
+                                <option value="2">Comidas</option>
+                                <option value="3">Bebidas</option>
+                                <option value="4">Postres</option>
+                                <option value="5">Otros</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                        <button id="btnCancelarFormProducto" class="btn-danger"
+                            style="background-color: #9ca3af;">Cancelar</button>
+                        <button id="btnGuardarProducto" class="btn-info">Guardar Cambios</button>
+                    </div>
+                </div>
+
+                <div class="panel-blanco">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #e5e7eb; background-color: #f9fafb;">
+                                <th style="padding: 12px; color: #374151;">ID</th>
+                                <th style="padding: 12px; color: #374151;">Nombre</th>
+                                <th style="padding: 12px; color: #374151;">Precio</th>
+                                <th style="padding: 12px; text-align: right; color: #374151;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaProductosAdmin">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            <section id="sec-usuarios" class="admin-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2>Gestión de Personal</h2>
+                    <button id="btnNuevoUsuario" class="btn-success">+ Nuevo Usuario</button>
+                </div>
+
+                <div id="panelFormUsuario" class="panel-blanco"
+                    style="display: none; margin-bottom: 20px; border-left: 4px solid #8b5cf6;">
+                    <h3 id="tituloFormUsuario" style="margin-bottom: 15px;">Añadir Usuario</h3>
+                    <input type="hidden" id="formUsuarioId">
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div>
+                            <label style="font-weight: bold; color: #4b5563;">Nombre</label>
+                            <input type="text" id="formUsuarioNombre" placeholder="Ej: Carlos"
+                                style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin-top: 5px;">
+                        </div>
+                        <div>
+                            <label style="font-weight: bold; color: #4b5563;">Apellido</label>
+                            <input type="text" id="formUsuarioApellido" placeholder="Ej: Gómez"
+                                style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin-top: 5px;">
+                        </div>
+                        <div>
+                            <label style="font-weight: bold; color: #4b5563;">Email (Usuario de Login)</label>
+                            <input type="email" id="formUsuarioEmail" placeholder="carlos@restosoft.com"
+                                style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin-top: 5px;">
+                        </div>
+                        <div>
+                            <label style="font-weight: bold; color: #4b5563;">Contraseña</label>
+                            <input type="text" id="formUsuarioPassword" placeholder="***"
+                                style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin-top: 5px;">
+                        </div>
+                        <div>
+                            <label style="font-weight: bold; color: #4b5563;">Rol del Sistema</label>
+                            <select id="formUsuarioRol"
+                                style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin-top: 5px;">
+                                <option value="MOZO">Mozo (Salón)</option>
+                                <option value="COCINA">Cocinero (Kanban)</option>
+                                <option value="CAJERO">Cajero (Cobros)</option>
+                                <option value="ADMIN">Administrador (Total)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                        <button id="btnCancelarFormUsuario" class="btn-danger"
+                            style="background-color: #9ca3af;">Cancelar</button>
+                        <button id="btnGuardarUsuario" class="btn-info" style="background-color: #8b5cf6;">Guardar
+                            Usuario</button>
+                    </div>
+                </div>
+
+                <div class="panel-blanco">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #e5e7eb; background-color: #f9fafb;">
+                                <th style="padding: 12px; color: #374151;">Nombre Completo</th>
+                                <th style="padding: 12px; color: #374151;">Email</th>
+                                <th style="padding: 12px; color: #374151;">Rol</th>
+                                <th style="padding: 12px; text-align: right; color: #374151;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaUsuariosAdmin">
+                        </tbody>
+                    </table>
+                </div>
+                <hr class="divider" style="margin: 40px 0; border-top: 2px solid #e5e7eb;">
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2>Gestión de Clientes Frecuentes</h2>
+                    <button id="btnNuevoCliente" class="btn-success">+ Nuevo Cliente</button>
+                </div>
+
+                <div id="panelFormCliente" class="panel-blanco"
+                    style="display: none; margin-bottom: 20px; border-left: 4px solid #10b981;">
+                    <h3 id="tituloFormCliente" style="margin-bottom: 15px;">Añadir Cliente</h3>
+                    <input type="hidden" id="formClienteId">
+                    <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                        <div style="flex: 2;">
+                            <label style="font-weight: bold; color: #4b5563;">Nombre / Empresa</label>
+                            <input type="text" id="formClienteNombre" placeholder="Ej: Juan Pérez"
+                                style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin-top: 5px;">
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="font-weight: bold; color: #4b5563;">Descuento (%)</label>
+                            <input type="number" id="formClienteDescuento" placeholder="Ej: 10"
+                                style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin-top: 5px;">
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                        <button id="btnCancelarFormCliente" class="btn-danger"
+                            style="background-color: #9ca3af;">Cancelar</button>
+                        <button id="btnGuardarCliente" class="btn-info" style="background-color: #10b981;">Guardar
+                            Cliente</button>
+                    </div>
+                </div>
+
+                <div class="panel-blanco">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #e5e7eb; background-color: #f9fafb;">
+                                <th style="padding: 12px;">Nombre Completo</th>
+                                <th style="padding: 12px;">Descuento Aplicable</th>
+                                <th style="padding: 12px; text-align: right;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaClientesAdmin"></tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="js/admin.js"></script>
+</body>
+
+</html>

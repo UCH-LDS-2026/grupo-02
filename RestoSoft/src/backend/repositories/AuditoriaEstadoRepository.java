@@ -5,6 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface AuditoriaEstadoRepository
-        extends JpaRepository<AuditoriaEstado, Integer> {
+public interface AuditoriaEstadoRepository extends JpaRepository<AuditoriaEstado, Integer> {
 }
