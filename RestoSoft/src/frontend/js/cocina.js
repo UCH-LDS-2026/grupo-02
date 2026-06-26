@@ -2,14 +2,22 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // 1. CONTROL DE SEGURIDAD
     const usuarioLogueado = JSON.parse(localStorage.getItem('usuarioLogueado'));
-    
-    // Ahora permitimos COCINA, ADMIN y también MOZO
-    if (!usuarioLogueado || (usuarioLogueado.rol !== 'COCINA' && usuarioLogueado.rol !== 'ADMIN' && usuarioLogueado.rol !== 'MOZO')) {
+ 
+    // Si no hay nadie logueado, lo mandamos al index
+    if (!usuarioLogueado) {
         window.location.href = 'index.html';
         return; 
     }
     
-    // Le mostramos su nombre real, ya sea Mozo o Chef
+    // Lista de roles que tienen permiso para ver esta pantalla (¡Agregamos al CAJERO!)
+    const rolesPermitidos = ['COCINA', 'ADMIN', 'MOZO', 'CAJERO'];
+    
+    if (!rolesPermitidos.includes(usuarioLogueado.rol)) {
+        window.location.href = 'index.html';
+        return; 
+    }
+    
+    // Le mostramos su nombre real y rol
     document.getElementById('nombreUsuario').textContent = `${usuarioLogueado.nombre} (${usuarioLogueado.rol})`;
 
     document.getElementById('btnLogout').addEventListener('click', () => {
@@ -17,6 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
         window.location.href = 'index.html';
     });
 
+    // Ocultamos la pestaña de Administración si el usuario NO es ADMIN ni CAJERO
     const navAdmin = document.querySelector('a[href="administracion.html"]');
     if (navAdmin && (usuarioLogueado.rol === 'MOZO' || usuarioLogueado.rol === 'COCINA')) {
         navAdmin.style.display = 'none';
