@@ -25,8 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 2. CARGAR EL TABLERO INICIAL
     cargarTablero();
 
-    // 3. RECARGA AUTOMÁTICA (Opcional pero recomendado)
-    // Recarga los pedidos cada 10 segundos para que el chef no tenga que apretar F5
+    // 3. RECARGA AUTOMÁTICA CADA 10 SEGUNDOS
     setInterval(cargarTablero, 10000); 
 });
 

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RestoSoft - Administración</title>
+    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="css/administracion.css">
+
+</head>
+
+<body>
+    <header class="top-header">
+        <div class="header-left">
+            <span class="logo">RestoSoft</span>
+            <nav class="main-nav">
+                <a href="salon.html" class="nav-item">Mesas</a>
+                <a href="cocina.html" class="nav-item">Cocina</a>
+                <a href="administracion.html" class="nav-item active">Caja / Historial</a>
+            </nav>
+        </div>
+        <div class="user-info">
+            <span id="nombreUsuario"></span>
+            <button id="btnLogout" class="btn-danger" style="margin-left: 1rem; padding: 0.3rem 0.8rem;">Cerrar
+                Sesion</button>
+        </div>
+    </header>
+
+    <div class="admin-layout">
+        <aside class="sidebar">
+            <a href="#" class="sidebar-link active" data-target="sec-caja">💰 Caja y Cobros</a>
+            <a href="#" class="sidebar-link" data-target="sec-arqueo">📊 Arqueo de Caja</a>
+            <a href="#" class="sidebar-link" data-target="sec-ventas">📈 Registro de Ventas</a>
+            <a href="#" class="sidebar-link" data-target="sec-salon">🗺️ Editor de Salón</a>
+            <a href="#" class="sidebar-link" data-target="sec-menu">🍔 Menú y Precios</a>
+            <a href="#" class="sidebar-link" data-target="sec-usuarios">👥 Usuarios y Clientes</a>
+        </aside>
+
+        <main class="main-content">
+
+            <section id="sec-caja" class="admin-section active">
+                <h2 style="margin-bottom: 20px;">Caja y Cobros</h2>
+
+                <div class="caja-grid">
+                    <div class="panel-blanco">
+                        <h3 style="margin-bottom: 15px; color: #ef4444;">Esperando Cobro</h3>
+                        <div id="listaMesasCobrar">
+                        </div>
+                    </div>
+
+                    <div class="panel-blanco" id="panelDetalleCobro" style="display: none;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; margin-bottom: 15px;">
+                            <h3 style="margin: 0;">Detalle Mesa <span id="cobroNroMesa"></span></h3>
+                            <span id="cobroMozo" style="color: gray; font-size: 0.9rem;"></span>
+                        </div>
+
+                        <ul id="cobroListaItems" class="lista-items" style="max-height: 300px; overflow-y: auto;">
+                        </ul>
+
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; background: #f3f4f6; padding: 15px; border-radius: 6px; margin-top: 15px;">
+                            <span style="font-size: 1.2rem; font-weight: bold;">TOTAL A COBRAR</span>
+                            <span id="cobroTotalMesa"
+                                style="font-size: 1.5rem; font-weight: bold; color: #10b981;">$0.00</span>
+                        </div>
+
+                        <div style="margin-top: 20px;">
+                            <label style="font-weight: bold; display: block; margin-bottom: 8px;">Método de Pago</label>
+                            <select id="selectMetodoPago"
+                                style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+                                <option value="EFECTIVO">Efectivo</option>
+                                <option value="TARJETA_DEBITO">Tarjeta de Débito</option>
+                                <option value="TARJETA_CREDITO">Tarjeta de Crédito</option>
+                                <option value="MERCADO_PAGO">Mercado Pago / Transferencia</option>
+                            </select>
+                        </div>
+
+                        <button id="btnRegistrarCobro" class="btn-success"
+                            style="width: 100%; padding: 15px; font-size: 1.1rem; margin-top: 20px;">
+                            ✅ Registrar Pago y Liberar Mesa
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="sec-arqueo" class="admin-section">
+                <h2>Arqueo de Caja</h2>
+                <p>Módulo en construcción...</p>
+            </section>
+
+            <section id="sec-ventas" class="admin-section">
+                <h2>Registro de Ventas</h2>
+            </section>
+            <section id="sec-salon" class="admin-section">
+                <h2>Editor de Salón</h2>
+            </section>
+            <section id="sec-menu" class="admin-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2>Gestión de Menú y Precios</h2>
+                    <button id="btnNuevoProducto" class="btn-success">+ Nuevo Producto</button>
+                </div>
+
+                <div id="panelFormProducto" class="panel-blanco"
+                    style="display: none; margin-bottom: 20px; border-left: 4px solid #3b82f6;">
+                    <h3 id="tituloFormProducto" style="margin-bottom: 15px;">Añadir Producto</h3>
+                    <input type="hidden" id="formProductoId">
+
+                  <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                        <div style="flex: 2;">
+                            <label style="font-weight: bold; color: #4b5563;">Nombre del Producto</label>
+                            <input type="text" id="formProductoNombre" placeholder="Ej: Pizza Napolitana" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin-top: 5px;">
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="font-weight: bold; color: #4b5563;">Precio ($)</label>
+                            <input type="number" id="formProductoPrecio" placeholder="0.00" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin-top: 5px;">
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="font-weight: bold; color: #4b5563;">Categoría</label>
+                            <select id="formProductoCategoria" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin-top: 5px;">
+                                <option value="1">Combos</option>
+                                <option value="2">Comidas</option>
+                                <option value="3">Bebidas</option>
+                                <option value="4">Postres</option>
+                                <option value="5">Otros</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                        <button id="btnCancelarFormProducto" class="btn-danger"
+                            style="background-color: #9ca3af;">Cancelar</button>
+                        <button id="btnGuardarProducto" class="btn-info">Guardar Cambios</button>
+                    </div>
+                </div>
+
+                <div class="panel-blanco">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #e5e7eb; background-color: #f9fafb;">
+                                <th style="padding: 12px; color: #374151;">ID</th>
+                                <th style="padding: 12px; color: #374151;">Nombre</th>
+                                <th style="padding: 12px; color: #374151;">Precio</th>
+                                <th style="padding: 12px; text-align: right; color: #374151;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaProductosAdmin">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            <section id="sec-usuarios" class="admin-section">
+                <h2>Usuarios y Clientes</h2>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="js/admin.js"></script>
+</body>
+
+</html>

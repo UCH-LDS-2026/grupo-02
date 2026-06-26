@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 22-06-2026 a las 00:22:10
+-- Tiempo de generación: 26-06-2026 a las 02:09:12
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -37,6 +37,13 @@ CREATE TABLE `auditoria_estado` (
   `motivo_contingencia` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Volcado de datos para la tabla `auditoria_estado`
+--
+
+INSERT INTO `auditoria_estado` (`id_auditoria`, `id_instancia`, `estado_anterior`, `estado_nuevo`, `fecha_cambio`, `usuario_responsable`, `motivo_contingencia`) VALUES
+(1, 2, 'ITEM: Coca Cola 1.5L (x1)', 'CANCELADO LÓGICAMENTE', NULL, 5, 'Duplicado accidental');
+
 -- --------------------------------------------------------
 
 --
@@ -54,8 +61,11 @@ CREATE TABLE `categoria_producto` (
 --
 
 INSERT INTO `categoria_producto` (`id_categoria`, `nombre`, `descripcion`) VALUES
-(1, 'Pizzas', 'Pizzas a la piedra'),
-(2, 'Bebidas', 'Bebidas frías sin alcohol');
+(1, 'Combos', 'Combos de comida'),
+(2, 'Comidas', 'Comidas sin bebidas'),
+(3, 'Bebidas', 'Bebidas frias para tomar'),
+(4, 'Postre', 'Postres para acompañar despues de la comida o para comer solo'),
+(5, 'Otro', 'Otras opciones de comida o bebida que no se encuentran en las anteriores opciones');
 
 -- --------------------------------------------------------
 
@@ -71,6 +81,20 @@ CREATE TABLE `comanda` (
   `id_mesa` int(11) NOT NULL,
   `id_usuario` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `comanda`
+--
+
+INSERT INTO `comanda` (`id_comanda`, `id_instancia`, `fecha_creacion`, `estado`, `id_mesa`, `id_usuario`) VALUES
+(9, 2, '2026-06-22 00:04:34', 'ENTREGADO', 1, 5),
+(10, 2, '2026-06-22 22:35:21', 'ENTREGADO', 1, 5),
+(11, 2, '2026-06-22 23:12:37', 'ENTREGADO', 1, 5),
+(12, 2, '2026-06-22 23:28:19', 'ENTREGADO', 1, 5),
+(13, 2, '2026-06-22 23:28:41', 'ENTREGADO', 1, 5),
+(14, 2, '2026-06-24 13:36:19', 'ENTREGADO', 1, 5),
+(15, 3, '2026-06-24 13:49:16', 'PENDIENTE', 2, 5),
+(16, 4, '2026-06-24 17:38:13', 'PENDIENTE', 4, 2);
 
 -- --------------------------------------------------------
 
@@ -114,7 +138,22 @@ INSERT INTO `historial_mesa` (`id`, `estado_anterior`, `estado_nuevo`, `timestam
 (6, 'LIBRE', 'LIBRE', '2026-06-13 00:31:01.000000', 2),
 (7, 'LIBRE', 'OCUPADA', '2026-06-13 01:46:53.000000', 3),
 (8, 'LIBRE', 'OCUPADA', '2026-06-13 01:46:54.000000', 6),
-(9, 'OCUPADA', 'LIBRE', '2026-06-13 01:46:56.000000', 1);
+(9, 'OCUPADA', 'LIBRE', '2026-06-13 01:46:56.000000', 1),
+(10, 'LIBRE', 'OCUPADA', '2026-06-21 22:26:30.000000', 1),
+(11, 'OCUPADA', 'OCUPADA', '2026-06-22 22:35:27.000000', 1),
+(12, 'OCUPADA', 'OCUPADA', '2026-06-22 22:37:52.000000', 1),
+(13, 'OCUPADA', 'OCUPADA', '2026-06-22 23:12:27.000000', 1),
+(14, 'OCUPADA', 'OCUPADA', '2026-06-22 23:13:11.000000', 1),
+(15, 'OCUPADA', 'OCUPADA', '2026-06-22 23:28:36.000000', 1),
+(16, 'OCUPADA', 'OCUPADA', '2026-06-22 23:29:06.000000', 1),
+(17, 'LIBRE', 'OCUPADA', '2026-06-24 13:04:58.000000', 2),
+(18, 'OCUPADA', 'POR_COBRAR', '2026-06-24 14:46:11.000000', 1),
+(19, 'LIBRE', 'OCUPADA', '2026-06-24 17:37:28.000000', 4),
+(20, 'OCUPADA', 'OCUPADA', '2026-06-24 17:39:26.000000', 2),
+(21, 'OCUPADA', 'OCUPADA', '2026-06-24 17:39:31.000000', 4),
+(22, 'POR_COBRAR', 'OCUPADA', '2026-06-24 21:36:07.000000', 1),
+(23, 'OCUPADA', 'POR_COBRAR', '2026-06-24 21:36:25.000000', 2),
+(24, 'POR_COBRAR', 'LIBRE', '2026-06-25 22:48:10.000000', 2);
 
 -- --------------------------------------------------------
 
@@ -128,7 +167,7 @@ CREATE TABLE `instancia_mesa` (
   `id_mozo` int(11) NOT NULL,
   `fecha_apertura` datetime DEFAULT current_timestamp(),
   `fecha_cierre` datetime DEFAULT NULL,
-  `estado_actual` varchar(50) DEFAULT NULL
+  `estado_actual` enum('LIBRE','OCUPADA','PEDIDO_EN_CURSO','EN_MESA','POR_COBRAR') DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -136,7 +175,10 @@ CREATE TABLE `instancia_mesa` (
 --
 
 INSERT INTO `instancia_mesa` (`id_instancia`, `id_mesa`, `id_mozo`, `fecha_apertura`, `fecha_cierre`, `estado_actual`) VALUES
-(1, 1, 1, '2026-06-05 20:28:56', NULL, 'LIBRE');
+(1, 1, 1, '2026-06-05 20:28:56', NULL, 'LIBRE'),
+(2, 1, 5, '2026-06-21 22:26:30', NULL, 'OCUPADA'),
+(3, 2, 5, '2026-06-24 13:04:58', NULL, 'OCUPADA'),
+(4, 4, 2, '2026-06-24 17:37:28', NULL, 'OCUPADA');
 
 -- --------------------------------------------------------
 
@@ -151,8 +193,25 @@ CREATE TABLE `item_comanda` (
   `cantidad` int(11) NOT NULL,
   `subtotal` decimal(10,2) NOT NULL,
   `observaciones` varchar(255) DEFAULT NULL,
-  `comentario` varchar(255) DEFAULT NULL
+  `comentario` varchar(255) DEFAULT NULL,
+  `cancelado` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `item_comanda`
+--
+
+INSERT INTO `item_comanda` (`id_item`, `id_comanda`, `id_producto`, `cantidad`, `subtotal`, `observaciones`, `comentario`, `cancelado`) VALUES
+(3, 9, 1, 2, 13000.00, NULL, '', 0),
+(4, 10, 2, 1, 5500.00, NULL, '', 0),
+(5, 11, 3, 1, 2000.00, NULL, '', 0),
+(6, 12, 3, 1, 2000.00, NULL, '', 0),
+(7, 13, 3, 1, 2000.00, NULL, '', 1),
+(8, 14, 3, 1, 2000.00, NULL, '', 0),
+(9, 15, 3, 1, 2000.00, NULL, '', 0),
+(10, 16, 1, 1, 6500.00, NULL, '', 0),
+(11, 16, 2, 1, 5500.00, NULL, '', 0),
+(12, 16, 3, 3, 6000.00, NULL, '', 0);
 
 -- --------------------------------------------------------
 
@@ -172,10 +231,10 @@ CREATE TABLE `mesa` (
 --
 
 INSERT INTO `mesa` (`id_mesa`, `numero_mesa`, `capacidad`, `estado`) VALUES
-(1, 1, 2, 'LIBRE'),
+(1, 1, 2, 'OCUPADA'),
 (2, 2, 2, 'LIBRE'),
 (3, 3, 4, 'OCUPADA'),
-(4, 4, 4, 'LIBRE'),
+(4, 4, 4, 'OCUPADA'),
 (5, 5, 6, 'PEDIDO_EN_CURSO'),
 (6, 6, 8, 'OCUPADA');
 
@@ -199,9 +258,10 @@ CREATE TABLE `producto` (
 --
 
 INSERT INTO `producto` (`id_producto`, `id_categoria`, `nombre`, `descripcion`, `precio`, `disponible`) VALUES
-(1, 1, 'Pizza Especial', 'Muzzarella, jamón y morrones', 6500.00, 1),
-(2, 1, 'Pizza Margarita', 'Muzzarella, albahaca y tomate', 5500.00, 1),
-(3, 2, 'Coca Cola 1.5L', 'Gaseosa linea Coca Cola', 2000.00, 1);
+(1, 2, 'Pizza Especial', 'Muzzarella, jamón y morrones', 6500.00, 1),
+(2, 2, 'Pizza Margarita', 'Muzzarella, albahaca y tomate', 5500.00, 1),
+(3, 3, 'Coca Cola 1.5L', 'Gaseosa linea Coca Cola', 4000.00, 1),
+(4, 1, 'Hamburguesa + Papas + Gaseosa 1.5L', NULL, 12000.00, 1);
 
 -- --------------------------------------------------------
 
@@ -225,9 +285,9 @@ CREATE TABLE `usuario` (
 
 INSERT INTO `usuario` (`id_usuario`, `nombre`, `apellido`, `email`, `password`, `rol`, `activo`) VALUES
 (1, 'Mozo', 'Prueba', 'mozo@restosoft.com', '1234', 'MOZO', 1),
-(2, 'Milagros', 'Gerente', 'admin@restosoft.com', 'admin123', 'ADMIN', 1),
-(3, 'Carlos', 'Chef', 'cocina@restosoft.com', 'cocina123', 'COCINA', 1),
-(5, 'Juan', 'Mozo', 'juan@restosoft.com', '1234', 'MOZO', 1);
+(2, 'Milagros', 'Gerente', 'milagros@restosoft.com', 'admin123', 'ADMIN', 1),
+(3, 'Marcos', 'Chef', 'marcos@restosoft.com', 'cocina123', 'COCINA', 1),
+(5, 'Juan', 'Mozo', 'juan@restosoft.com', 'mozo123', 'MOZO', 1);
 
 --
 -- Índices para tablas volcadas
@@ -316,19 +376,19 @@ ALTER TABLE `usuario`
 -- AUTO_INCREMENT de la tabla `auditoria_estado`
 --
 ALTER TABLE `auditoria_estado`
-  MODIFY `id_auditoria` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_auditoria` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de la tabla `categoria_producto`
 --
 ALTER TABLE `categoria_producto`
-  MODIFY `id_categoria` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id_categoria` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT de la tabla `comanda`
 --
 ALTER TABLE `comanda`
-  MODIFY `id_comanda` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id_comanda` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- AUTO_INCREMENT de la tabla `factura`
@@ -340,19 +400,19 @@ ALTER TABLE `factura`
 -- AUTO_INCREMENT de la tabla `historial_mesa`
 --
 ALTER TABLE `historial_mesa`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
 
 --
 -- AUTO_INCREMENT de la tabla `instancia_mesa`
 --
 ALTER TABLE `instancia_mesa`
-  MODIFY `id_instancia` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id_instancia` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT de la tabla `item_comanda`
 --
 ALTER TABLE `item_comanda`
-  MODIFY `id_item` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id_item` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT de la tabla `mesa`
@@ -364,7 +424,7 @@ ALTER TABLE `mesa`
 -- AUTO_INCREMENT de la tabla `producto`
 --
 ALTER TABLE `producto`
-  MODIFY `id_producto` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id_producto` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT de la tabla `usuario`
