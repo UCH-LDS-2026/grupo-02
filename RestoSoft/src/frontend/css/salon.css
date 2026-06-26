@@ -18,7 +18,7 @@ body { display: flex !important; flex-direction: column; height: 100vh; width: 1
 
 /* Grilla transformada en Lienzo interactivo */
 .mesas-grid {
-    position: relative; /* Cambia de grid a relative para coordenadas X/Y */
+    position: relative;
     width: 800px;
     height: 600px;
     margin: 20px auto;
@@ -27,7 +27,7 @@ body { display: flex !important; flex-direction: column; height: 100vh; width: 1
 }
 
 .mesa-card {
-    position: absolute; /* Para que obedezca las coordenadas */
+    position: absolute;
     width: 80px;
     height: 80px;
     background: white;
@@ -40,8 +40,9 @@ body { display: flex !important; flex-direction: column; height: 100vh; width: 1
     text-align: center;
     box-shadow: 0 4px 6px rgba(0,0,0,0.2);
     cursor: pointer;
-    border-top: 6px solid #bdc3c7; /* Movemos el color arriba para mejor lectura */
+    border-top: 6px solid #bdc3c7; 
     border-left: none;
+    overflow: hidden;
 }
 
 .mesa-card h3 { font-size: 1.2rem; margin-bottom: 2px; color: #374151; }
@@ -81,5 +82,12 @@ body { display: flex !important; flex-direction: column; height: 100vh; width: 1
 .btn-icon:hover { opacity: 1; }
 .comentario-input { width: 100%; padding: 0.4rem; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.85rem; font-style: italic; }
 
-@keyframes parpadear { 0% { box-shadow: 0 0 5px #10b981; } 50% { box-shadow: 0 0 20px #10b981; transform: scale(1.02); } 100% { box-shadow: 0 0 5px #10b981; } }
-.parpadeo-listo { animation: parpadear 1.5s infinite; }
+@keyframes parpadear { 
+    0% { box-shadow: 0 0 0px #10b981; } 
+    50% { box-shadow: 0 0 15px 4px #10b981; } 
+    100% { box-shadow: 0 0 0px #10b981; } 
+}
+.parpadeo-listo { 
+    animation: parpadear 1.5s infinite; 
+    border: 3px solid #10b981 !important;
+}

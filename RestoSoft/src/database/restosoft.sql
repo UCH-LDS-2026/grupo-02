@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 26-06-2026 a las 08:10:49
+-- Tiempo de generación: 26-06-2026 a las 19:45:21
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -116,8 +116,14 @@ INSERT INTO `comanda` (`id_comanda`, `id_instancia`, `fecha_creacion`, `estado`,
 (12, 2, '2026-06-22 23:28:19', 'ENTREGADO', 1, 5),
 (13, 2, '2026-06-22 23:28:41', 'ENTREGADO', 1, 5),
 (14, 2, '2026-06-24 13:36:19', 'ENTREGADO', 1, 5),
-(15, 3, '2026-06-24 13:49:16', 'PENDIENTE', 2, 5),
-(16, 4, '2026-06-24 17:38:13', 'PENDIENTE', 4, 2);
+(15, 3, '2026-06-24 13:49:16', 'LISTO', 2, 5),
+(16, 4, '2026-06-24 17:38:13', 'ENTREGADO', 4, 2),
+(17, 5, '2026-06-26 06:37:14', 'ENTREGADO', 2, 2),
+(18, 6, '2026-06-26 07:09:01', 'ENTREGADO', 2, 2),
+(19, 7, '2026-06-26 17:13:03', 'ENTREGADO', 2, 2),
+(20, 8, '2026-06-26 17:22:02', 'ENTREGADO', 3, 2),
+(21, 9, '2026-06-26 17:25:12', 'ENTREGADO', 3, 2),
+(22, 10, '2026-06-26 17:40:01', 'ENTREGADO', 3, 2);
 
 -- --------------------------------------------------------
 
@@ -130,9 +136,16 @@ CREATE TABLE `factura` (
   `id_instancia` int(11) NOT NULL,
   `id_cajero` int(11) NOT NULL,
   `fecha_factura` datetime DEFAULT current_timestamp(),
-  `total` decimal(10,2) NOT NULL,
+  `total` double NOT NULL,
   `metodo_pago` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `factura`
+--
+
+INSERT INTO `factura` (`id_factura`, `id_instancia`, `id_cajero`, `fecha_factura`, `total`, `metodo_pago`) VALUES
+(1, 10, 2, '2026-06-26 17:40:33', 4550, 'EFECTIVO');
 
 -- --------------------------------------------------------
 
@@ -154,11 +167,8 @@ CREATE TABLE `historial_mesa` (
 
 INSERT INTO `historial_mesa` (`id`, `estado_anterior`, `estado_nuevo`, `timestamp_cambio`, `mesa_id`) VALUES
 (1, 'LIBRE', 'OCUPADA', '2026-06-12 21:53:13.000000', 1),
-(2, 'LIBRE', 'OCUPADA', '2026-06-12 21:53:13.000000', 2),
 (3, 'OCUPADA', 'LIBRE', '2026-06-12 21:53:16.000000', 4),
 (4, 'POR_COBRAR', 'LIBRE', '2026-06-12 21:53:16.000000', 6),
-(5, 'OCUPADA', 'LIBRE', '2026-06-13 00:31:01.000000', 2),
-(6, 'LIBRE', 'LIBRE', '2026-06-13 00:31:01.000000', 2),
 (7, 'LIBRE', 'OCUPADA', '2026-06-13 01:46:53.000000', 3),
 (8, 'LIBRE', 'OCUPADA', '2026-06-13 01:46:54.000000', 6),
 (9, 'OCUPADA', 'LIBRE', '2026-06-13 01:46:56.000000', 1),
@@ -169,14 +179,38 @@ INSERT INTO `historial_mesa` (`id`, `estado_anterior`, `estado_nuevo`, `timestam
 (14, 'OCUPADA', 'OCUPADA', '2026-06-22 23:13:11.000000', 1),
 (15, 'OCUPADA', 'OCUPADA', '2026-06-22 23:28:36.000000', 1),
 (16, 'OCUPADA', 'OCUPADA', '2026-06-22 23:29:06.000000', 1),
-(17, 'LIBRE', 'OCUPADA', '2026-06-24 13:04:58.000000', 2),
 (18, 'OCUPADA', 'POR_COBRAR', '2026-06-24 14:46:11.000000', 1),
 (19, 'LIBRE', 'OCUPADA', '2026-06-24 17:37:28.000000', 4),
-(20, 'OCUPADA', 'OCUPADA', '2026-06-24 17:39:26.000000', 2),
 (21, 'OCUPADA', 'OCUPADA', '2026-06-24 17:39:31.000000', 4),
 (22, 'POR_COBRAR', 'OCUPADA', '2026-06-24 21:36:07.000000', 1),
-(23, 'OCUPADA', 'POR_COBRAR', '2026-06-24 21:36:25.000000', 2),
-(24, 'POR_COBRAR', 'LIBRE', '2026-06-25 22:48:10.000000', 2);
+(25, 'OCUPADA', 'POR_COBRAR', '2026-06-26 06:36:25.000000', 3),
+(26, 'OCUPADA', 'POR_COBRAR', '2026-06-26 06:36:31.000000', 6),
+(27, 'PEDIDO_EN_CURSO', 'POR_COBRAR', '2026-06-26 06:36:34.000000', 5),
+(28, 'POR_COBRAR', 'LIBRE', '2026-06-26 06:36:40.000000', 3),
+(29, 'POR_COBRAR', 'LIBRE', '2026-06-26 06:36:43.000000', 5),
+(30, 'POR_COBRAR', 'LIBRE', '2026-06-26 06:36:46.000000', 6),
+(38, 'OCUPADA', 'OCUPADA', '2026-06-26 06:55:11.000000', 4),
+(39, 'OCUPADA', 'OCUPADA', '2026-06-26 07:09:09.000000', 2),
+(40, 'OCUPADA', 'POR_COBRAR', '2026-06-26 07:09:10.000000', 2),
+(41, 'POR_COBRAR', 'LIBRE', '2026-06-26 07:09:22.000000', 2),
+(42, 'OCUPADA', 'POR_COBRAR', '2026-06-26 16:50:46.000000', 4),
+(43, 'POR_COBRAR', 'LIBRE', '2026-06-26 16:50:50.000000', 4),
+(44, 'LIBRE', 'OCUPADA', '2026-06-26 17:12:52.000000', 2),
+(45, 'OCUPADA', 'OCUPADA', '2026-06-26 17:13:10.000000', 2),
+(46, 'OCUPADA', 'POR_COBRAR', '2026-06-26 17:13:12.000000', 2),
+(47, 'POR_COBRAR', 'LIBRE', '2026-06-26 17:13:37.000000', 2),
+(48, 'LIBRE', 'OCUPADA', '2026-06-26 17:21:57.000000', 3),
+(49, 'OCUPADA', 'OCUPADA', '2026-06-26 17:22:31.000000', 3),
+(50, 'OCUPADA', 'POR_COBRAR', '2026-06-26 17:22:32.000000', 3),
+(51, 'POR_COBRAR', 'LIBRE', '2026-06-26 17:23:05.000000', 3),
+(52, 'LIBRE', 'OCUPADA', '2026-06-26 17:25:09.000000', 3),
+(53, 'OCUPADA', 'OCUPADA', '2026-06-26 17:25:20.000000', 3),
+(54, 'OCUPADA', 'POR_COBRAR', '2026-06-26 17:25:20.000000', 3),
+(55, 'POR_COBRAR', 'LIBRE', '2026-06-26 17:34:23.000000', 3),
+(56, 'LIBRE', 'OCUPADA', '2026-06-26 17:39:55.000000', 3),
+(57, 'OCUPADA', 'OCUPADA', '2026-06-26 17:40:15.000000', 3),
+(58, 'OCUPADA', 'POR_COBRAR', '2026-06-26 17:40:24.000000', 3),
+(59, 'POR_COBRAR', 'LIBRE', '2026-06-26 17:40:33.000000', 3);
 
 -- --------------------------------------------------------
 
@@ -201,7 +235,13 @@ INSERT INTO `instancia_mesa` (`id_instancia`, `id_mesa`, `id_mozo`, `fecha_apert
 (1, 1, 1, '2026-06-05 20:28:56', NULL, 'LIBRE'),
 (2, 1, 5, '2026-06-21 22:26:30', NULL, 'OCUPADA'),
 (3, 2, 5, '2026-06-24 13:04:58', NULL, 'OCUPADA'),
-(4, 4, 2, '2026-06-24 17:37:28', NULL, 'OCUPADA');
+(4, 4, 2, '2026-06-24 17:37:28', NULL, 'OCUPADA'),
+(5, 2, 2, '2026-06-26 06:37:00', NULL, 'OCUPADA'),
+(6, 2, 2, '2026-06-26 06:38:17', NULL, 'OCUPADA'),
+(7, 2, 2, '2026-06-26 17:12:52', NULL, 'OCUPADA'),
+(8, 3, 2, '2026-06-26 17:21:57', NULL, 'OCUPADA'),
+(9, 3, 2, '2026-06-26 17:25:09', NULL, 'OCUPADA'),
+(10, 3, 2, '2026-06-26 17:39:55', NULL, 'OCUPADA');
 
 -- --------------------------------------------------------
 
@@ -234,7 +274,13 @@ INSERT INTO `item_comanda` (`id_item`, `id_comanda`, `id_producto`, `cantidad`, 
 (9, 15, 3, 1, 2000.00, NULL, '', 0),
 (10, 16, 1, 1, 6500.00, NULL, '', 0),
 (11, 16, 2, 1, 5500.00, NULL, '', 0),
-(12, 16, 3, 3, 6000.00, NULL, '', 0);
+(12, 16, 3, 3, 6000.00, NULL, '', 0),
+(13, 17, 4, 1, 12000.00, NULL, '', 0),
+(14, 18, 3, 1, 4000.00, NULL, '', 0),
+(15, 19, 4, 1, 12000.00, NULL, '', 0),
+(16, 20, 3, 1, 4000.00, NULL, '', 0),
+(17, 21, 3, 1, 4000.00, NULL, '', 0),
+(18, 22, 1, 1, 6500.00, NULL, '', 0);
 
 -- --------------------------------------------------------
 
@@ -259,10 +305,10 @@ CREATE TABLE `mesa` (
 INSERT INTO `mesa` (`id_mesa`, `numero_mesa`, `capacidad`, `estado`, `posicion_x`, `posicion_y`, `sector`) VALUES
 (1, 1, 2, 'OCUPADA', 50, 0, 'Planta Baja'),
 (2, 2, 2, 'LIBRE', 150, 0, 'Planta Baja'),
-(3, 3, 4, 'OCUPADA', 250, 0, 'Planta Baja'),
-(4, 4, 4, 'OCUPADA', 350, 0, 'Planta Baja'),
-(5, 5, 6, 'PEDIDO_EN_CURSO', 100, 150, 'Planta Baja'),
-(6, 6, 8, 'OCUPADA', 300, 150, 'Planta Baja'),
+(3, 3, 4, 'LIBRE', 250, 0, 'Planta Baja'),
+(4, 4, 4, 'LIBRE', 350, 0, 'Planta Baja'),
+(5, 5, 6, 'LIBRE', 100, 150, 'Planta Baja'),
+(6, 6, 8, 'LIBRE', 300, 150, 'Planta Baja'),
 (10, 10, 4, 'LIBRE', 80, 0, 'Planta Alta'),
 (11, 11, 4, 'LIBRE', 240, 0, 'Planta Alta'),
 (12, 12, 4, 'LIBRE', 400, 0, 'Planta Alta'),
@@ -437,31 +483,31 @@ ALTER TABLE `cliente`
 -- AUTO_INCREMENT de la tabla `comanda`
 --
 ALTER TABLE `comanda`
-  MODIFY `id_comanda` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `id_comanda` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT de la tabla `factura`
 --
 ALTER TABLE `factura`
-  MODIFY `id_factura` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_factura` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de la tabla `historial_mesa`
 --
 ALTER TABLE `historial_mesa`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=60;
 
 --
 -- AUTO_INCREMENT de la tabla `instancia_mesa`
 --
 ALTER TABLE `instancia_mesa`
-  MODIFY `id_instancia` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id_instancia` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT de la tabla `item_comanda`
 --
 ALTER TABLE `item_comanda`
-  MODIFY `id_item` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `id_item` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT de la tabla `mesa`

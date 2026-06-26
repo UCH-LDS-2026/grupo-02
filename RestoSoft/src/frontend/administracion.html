@@ -31,7 +31,6 @@
         <aside class="sidebar">
             <a href="#" class="sidebar-link active" data-target="sec-caja">💰 Caja y Cobros</a>
             <a href="#" class="sidebar-link" data-target="sec-arqueo">📊 Arqueo de Caja</a>
-            <a href="#" class="sidebar-link" data-target="sec-ventas">📈 Registro de Ventas</a>
             <a href="#" class="sidebar-link" data-target="sec-salon">🗺️ Editor de Salón</a>
             <a href="#" class="sidebar-link" data-target="sec-menu">🍔 Menú y Precios</a>
             <a href="#" class="sidebar-link" data-target="sec-usuarios">👥 Usuarios y Clientes</a>
@@ -58,13 +57,6 @@
 
                         <ul id="cobroListaItems" class="lista-items" style="max-height: 300px; overflow-y: auto;">
                         </ul>
-
-                        <div
-                            style="display: flex; justify-content: space-between; align-items: center; background: #f3f4f6; padding: 15px; border-radius: 6px; margin-top: 15px;">
-                            <span style="font-size: 1.2rem; font-weight: bold;">TOTAL A COBRAR</span>
-                            <span id="cobroTotalMesa"
-                                style="font-size: 1.5rem; font-weight: bold; color: #10b981;">$0.00</span>
-                        </div>
                         <div style="margin-top: 15px;">
                             <label style="font-weight: bold; display: block; margin-bottom: 8px;">Cliente (Aplicar
                                 Descuento)</label>
@@ -103,14 +95,62 @@
                     </div>
                 </div>
             </section>
-
             <section id="sec-arqueo" class="admin-section">
-                <h2>Arqueo de Caja</h2>
-                <p>Módulo en construcción...</p>
-            </section>
 
-            <section id="sec-ventas" class="admin-section">
-                <h2>Registro de Ventas</h2>
+                <h2 style="margin-bottom: 20px;">📊 Arqueo de Caja (Totales)</h2>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 40px;">
+                    <div class="panel-blanco" style="border-top: 4px solid #3b82f6; text-align: center;">
+                        <h3 style="color: #6b7280; font-size: 1rem;">Total Facturado</h3>
+                        <p id="arqueoTotal" style="font-size: 2rem; font-weight: bold; color: #1f2937;">$0.00</p>
+                    </div>
+                    <div class="panel-blanco" style="border-top: 4px solid #10b981; text-align: center;">
+                        <h3 style="color: #6b7280; font-size: 1rem;">Efectivo</h3>
+                        <p id="arqueoEfectivo" style="font-size: 1.5rem; font-weight: bold; color: #10b981;">$0.00</p>
+                    </div>
+                    <div class="panel-blanco" style="border-top: 4px solid #f59e0b; text-align: center;">
+                        <h3 style="color: #6b7280; font-size: 1rem;">Tarjetas</h3>
+                        <p id="arqueoTarjetas" style="font-size: 1.5rem; font-weight: bold; color: #f59e0b;">$0.00</p>
+                    </div>
+                    <div class="panel-blanco" style="border-top: 4px solid #8b5cf6; text-align: center;">
+                        <h3 style="color: #6b7280; font-size: 1rem;">Mercado Pago</h3>
+                        <p id="arqueoMP" style="font-size: 1.5rem; font-weight: bold; color: #8b5cf6;">$0.00</p>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2>📈 Historial de Ventas</h2>
+                    <button id="btnVerTiempos" class="btn-primary" style="width: auto;">⏱️ Analizar Tiempos de
+                        Mesas</button>
+                </div>
+
+                <div id="panelTiempos" class="panel-blanco"
+                    style="display: none; margin-bottom: 20px; border-left: 4px solid #f59e0b;">
+                    <h3>Registro de Tiempos y Demoras</h3>
+                    <table style="width: 100%; margin-top: 15px; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background-color: #f9fafb; border-bottom: 2px solid #e5e7eb;">
+                                <th style="padding: 10px;">Mesa</th>
+                                <th style="padding: 10px;">Transición</th>
+                                <th style="padding: 10px;">Hora Registrada</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaTiemposAdmin"></tbody>
+                    </table>
+                </div>
+
+                <div class="panel-blanco">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #e5e7eb; background-color: #f9fafb;">
+                                <th style="padding: 12px;">Ticket / Factura</th>
+                                <th style="padding: 12px;">Fecha y Hora</th>
+                                <th style="padding: 12px;">Método de Pago</th>
+                                <th style="padding: 12px; text-align: right;">Total Cobrado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaVentasAdmin"></tbody>
+                    </table>
+                </div>
             </section>
             <section id="sec-salon" class="admin-section">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -118,13 +158,15 @@
                     <button id="btnGuardarMapa" class="btn-success">💾 Guardar Distribución</button>
                 </div>
 
-              <div class="tabs-mapa-container">
+                <div class="tabs-mapa-container">
                     <button class="tab-mapa tab-admin-mapa active" data-sector="Planta Baja">Planta Baja</button>
                     <button class="tab-mapa tab-admin-mapa" data-sector="Planta Alta">Planta Alta</button>
                     <button class="tab-mapa tab-admin-mapa" data-sector="Afuera">Afuera</button>
-                    
-                    <button id="btnEliminarMesaMapa" class="btn-danger" style="margin-left: auto; display: none;">🗑️ Eliminar Mesa</button>
-                    <button id="btnAgregarMesaMapa" class="btn-anadir-mesa" style="margin-left: 10px;">+ Añadir Mesa</button>
+
+                    <button id="btnEliminarMesaMapa" class="btn-danger" style="margin-left: auto; display: none;">🗑️
+                        Eliminar Mesa</button>
+                    <button id="btnAgregarMesaMapa" class="btn-anadir-mesa" style="margin-left: 10px;">+ Añadir
+                        Mesa</button>
                 </div>
 
                 <div style="display: flex; gap: 20px;">

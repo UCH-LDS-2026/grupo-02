@@ -1,7 +1,6 @@
 package backend.models;
 
 import jakarta.persistence.*;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -19,60 +18,38 @@ public class Factura {
     @Column(name = "id_cajero", nullable = false)
     private Integer idCajero;
 
-    @Column(name = "fecha_factura")
-    private LocalDateTime fechaFactura = LocalDateTime.now();
+    @Column(name = "fecha_factura", updatable = false)
+    private LocalDateTime fechaFactura;
 
-    @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal total;
+    @Column(nullable = false)
+    private Double total;
 
     @Column(name = "metodo_pago")
     private String metodoPago;
 
-    public Integer getIdFactura() {
-        return idFactura;
+    @PrePersist
+    protected void alCrear() {
+        if (fechaFactura == null) {
+            fechaFactura = LocalDateTime.now();
+        }
     }
 
-    public void setIdFactura(Integer idFactura) {
-        this.idFactura = idFactura;
-    }
+    // Getters y Setters
+    public Integer getIdFactura() { return idFactura; }
+    public void setIdFactura(Integer idFactura) { this.idFactura = idFactura; }
 
-    public Integer getIdInstancia() {
-        return idInstancia;
-    }
+    public Integer getIdInstancia() { return idInstancia; }
+    public void setIdInstancia(Integer idInstancia) { this.idInstancia = idInstancia; }
 
-    public void setIdInstancia(Integer idInstancia) {
-        this.idInstancia = idInstancia;
-    }
+    public Integer getIdCajero() { return idCajero; }
+    public void setIdCajero(Integer idCajero) { this.idCajero = idCajero; }
 
-    public Integer getIdCajero() {
-        return idCajero;
-    }
+    public LocalDateTime getFechaFactura() { return fechaFactura; }
+    public void setFechaFactura(LocalDateTime fechaFactura) { this.fechaFactura = fechaFactura; }
 
-    public void setIdCajero(Integer idCajero) {
-        this.idCajero = idCajero;
-    }
+    public Double getTotal() { return total; }
+    public void setTotal(Double total) { this.total = total; }
 
-    public LocalDateTime getFechaFactura() {
-        return fechaFactura;
-    }
-
-    public void setFechaFactura(LocalDateTime fechaFactura) {
-        this.fechaFactura = fechaFactura;
-    }
-
-    public BigDecimal getTotal() {
-        return total;
-    }
-
-    public void setTotal(BigDecimal total) {
-        this.total = total;
-    }
-
-    public String getMetodoPago() {
-        return metodoPago;
-    }
-
-    public void setMetodoPago(String metodoPago) {
-        this.metodoPago = metodoPago;
-    }
+    public String getMetodoPago() { return metodoPago; }
+    public void setMetodoPago(String metodoPago) { this.metodoPago = metodoPago; }
 }

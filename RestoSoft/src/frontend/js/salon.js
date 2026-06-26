@@ -37,15 +37,15 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-// 4. LÓGICA DE LAS PESTAÑAS DE SECTORES
+    // 4. LÓGICA DE LAS PESTAÑAS DE SECTORES
     const botonesSector = document.querySelectorAll('.tab-btn');
     botonesSector.forEach(boton => {
         boton.addEventListener('click', (e) => {
             botonesSector.forEach(b => b.classList.remove('active'));
             e.target.classList.add('active');
-            
+
             // Leemos qué texto tiene el botón (Ej: "Planta Baja")
-            sectorActivoSalon = e.target.textContent.trim(); 
+            sectorActivoSalon = e.target.textContent.trim();
             cargarMesas(); // Recargamos para mostrar las mesas de ese piso
         });
     });
@@ -112,10 +112,13 @@ async function cargarMesas() {
         // Filtramos solo las mesas del sector activo
         const mesas = mesasTodas.filter(m => m.sector === sectorActivoSalon || (!m.sector && sectorActivoSalon === 'Planta Baja'));
 
-        const responseComandas = await fetch('http://localhost:8080/api/comandas');
+       const responseComandas = await fetch('http://localhost:8080/api/comandas');
         const comandas = await responseComandas.json();
-        const mesasConPedidosListos = comandas.filter(c => c.estado === 'LISTO').map(c => c.mesa.idMesa);
 
+        const mesasConPedidosListos = comandas
+            .filter(c => c.estado === 'LISTO' && c.mesa.estado !== 'LIBRE')
+            .map(c => c.mesa.idMesa);
+            
         const gridMesas = document.getElementById('gridMesas');
         gridMesas.innerHTML = '';
 
@@ -134,7 +137,7 @@ async function cargarMesas() {
 
             let alertaHTML = '';
             if (mesasConPedidosListos.includes(mesa.idMesa)) {
-                mesaCard.style.border = '3px solid #10b981';
+                mesaCard.style.outline = '4px solid #10b981';
                 mesaCard.classList.add('parpadeo-listo');
                 alertaHTML = `<div style="color: #10b981; font-weight: bold; font-size: 1.2rem; margin-top: 5px; text-align: center;">🔔 ¡LISTO!</div>`;
             }
@@ -177,7 +180,7 @@ async function abrirPanelComanda(mesa) {
     if (document.getElementById('resumenCliente')) document.getElementById('resumenCliente').textContent = '-';
     if (document.getElementById('resumenHora')) document.getElementById('resumenHora').textContent = '-';
     if (document.getElementById('resumenComensales')) document.getElementById('resumenComensales').textContent = '-';
-    
+
     const listaConsumo = document.getElementById('listaConsumo');
     if (listaConsumo) {
         listaConsumo.innerHTML = '<p style="color:gray; text-align:center;">Cargando información de la mesa...</p>';
@@ -206,10 +209,10 @@ async function abrirPanelComanda(mesa) {
                 const resComanda = await fetch(`http://localhost:8080/api/comandas/instancia/${instancia.idInstancia}`);
 
                 if (listaConsumo) {
-                    listaConsumo.innerHTML = ''; 
+                    listaConsumo.innerHTML = '';
 
                     if (resComanda.ok) {
-                        const comandasDeInstancia = await resComanda.json(); 
+                        const comandasDeInstancia = await resComanda.json();
 
                         let todosLosItems = [];
                         comandasDeInstancia.forEach(comanda => {
@@ -218,22 +221,22 @@ async function abrirPanelComanda(mesa) {
                             }
                         });
 
-                       if (todosLosItems.length > 0) {
-                            let totalConsumo = 0; 
+                        if (todosLosItems.length > 0) {
+                            let totalConsumo = 0;
 
                             todosLosItems.forEach(item => {
                                 const isCancelado = item.cancelado === true;
-                                
+
                                 if (!isCancelado) {
                                     totalConsumo += parseFloat(item.subtotal);
                                 }
-                                
-                                const estiloFila = isCancelado 
-                                    ? "display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; padding:8px; background:#e5e7eb; border-radius:4px; text-decoration: line-through; color: #9ca3af;" 
+
+                                const estiloFila = isCancelado
+                                    ? "display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; padding:8px; background:#e5e7eb; border-radius:4px; text-decoration: line-through; color: #9ca3af;"
                                     : "display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; padding:8px; background:#f3f4f6; border-radius:4px;";
-                                
-                                const accionHTML = isCancelado 
-                                    ? `<span style="font-size:0.8rem; font-style:italic; color: #ef4444;">Cancelado</span>` 
+
+                                const accionHTML = isCancelado
+                                    ? `<span style="font-size:0.8rem; font-style:italic; color: #ef4444;">Cancelado</span>`
                                     : `<button onclick="borrarItemConsumo(${item.idItem})" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:1.2rem;" title="Cancelar Pedido">🗑️</button>`;
 
                                 listaConsumo.innerHTML += `
@@ -263,11 +266,11 @@ async function abrirPanelComanda(mesa) {
                 }
             } else {
                 // Si la mesa no tiene instancia activa, la limpiamos explícitamente
-                if(listaConsumo) listaConsumo.innerHTML = '<p style="color:gray;">No hay consumo registrado.</p>';
+                if (listaConsumo) listaConsumo.innerHTML = '<p style="color:gray;">No hay consumo registrado.</p>';
             }
         } catch (e) {
             console.log("No se pudo obtener la instancia activa o el consumo", e);
-            if(listaConsumo) listaConsumo.innerHTML = '<p style="color:red;">Falla de conexión al cargar el historial.</p>';
+            if (listaConsumo) listaConsumo.innerHTML = '<p style="color:red;">Falla de conexión al cargar el historial.</p>';
         }
 
         faseApertura.style.display = 'none';

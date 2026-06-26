@@ -43,7 +43,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const targetId = e.target.getAttribute('data-target');
             document.getElementById(targetId).classList.add('active');
 
-           // NAVEGACIÓN DEL MENÚ LATERAL
+            // NAVEGACIÓN DEL MENÚ LATERAL
             if (targetId === 'sec-caja') {
                 cargarMesasPorCobrar();
                 cargarClientesAdmin();
@@ -58,10 +58,13 @@ document.addEventListener("DOMContentLoaded", () => {
             if (targetId === 'sec-salon') {
                 cargarEditorSalon();
             }
+            if (targetId === 'sec-arqueo' || targetId === 'sec-ventas') {
+                cargarArqueoYVentas();
+            }
         });
     });
 
-// 3. INICIO DE MÓDULO CAJA
+    // 3. INICIO DE MÓDULO CAJA
     cargarMesasPorCobrar();
     cargarClientesAdmin();
     setInterval(cargarMesasPorCobrar, 15000); // Refresca cada 15 segundos
@@ -119,7 +122,7 @@ async function abrirDetalleCobro(mesa, elementoHtml) {
 
     // Remarcamos la mesa seleccionada visualmente
     document.querySelectorAll('.mesa-cobrar-card').forEach(el => el.classList.remove('selected'));
-    elementoHtml.classList.add('selected');
+    if (elementoHtml) elementoHtml.classList.add('selected');
 
     document.getElementById('panelDetalleCobro').style.display = 'block';
     document.getElementById('cobroNroMesa').textContent = mesa.numeroMesa;
@@ -163,41 +166,29 @@ async function abrirDetalleCobro(mesa, elementoHtml) {
             }
         });
 
-        totalSinDescuento = total; // Guardamos el original
+        // 3. PREPARAMOS LOS TOTALES PARA EL DESCUENTO
+        const descFinal = document.getElementById('cobroTotalMesa');
+        // Usamos el atributo inmutable que preparamos en la función actualizarTotalCaja
+        descFinal.setAttribute('data-total-base', total); 
+        descFinal.textContent = `$${total.toFixed(2)}`;
+        
         document.getElementById('selectClienteCobro').value = "0"; // Reiniciamos el cliente
-        actualizarTotalCaja(); // Calculamos
+        actualizarTotalCaja(); // Refrescamos la visual
+
+        // 4. ASIGNAMOS LA ACCIÓN AL BOTÓN DE COBRO
+        const btnCobrar = document.getElementById('btnRegistrarCobro');
+        // Clonamos el botón para matar eventos de mesas anteriores y que no se dupliquen cobros
+        const nuevoBtnCobrar = btnCobrar.cloneNode(true);
+        btnCobrar.parentNode.replaceChild(nuevoBtnCobrar, btnCobrar);
+
+        // Le inyectamos la función correcta usando la variable global actualizada
+        nuevoBtnCobrar.addEventListener('click', () => {
+            registrarFacturaYLiberar(mesaParaCobrar.idMesa, mesaParaCobrar.idInstanciaActual);
+        });
 
     } catch (e) {
         console.error("Error obteniendo detalles del cobro", e);
         listaConsumo.innerHTML = '<li style="color:red;">Error al cargar los datos</li>';
-    }
-}
-
-async function registrarCobro() {
-    if (!mesaParaCobrar) return;
-
-    const btn = document.getElementById('btnRegistrarCobro');
-    btn.disabled = true;
-    btn.textContent = 'Procesando...';
-
-    try {
-        const response = await fetch(`http://localhost:8080/api/mesas/${mesaParaCobrar.idMesa}/estado?nuevoEstado=LIBRE`, {
-            method: 'PUT'
-        });
-
-        if (response.ok) {
-            alert("¡Cobro registrado exitosamente! La mesa ya está libre.");
-            document.getElementById('panelDetalleCobro').style.display = 'none';
-            mesaParaCobrar = null;
-            cargarMesasPorCobrar();
-        } else {
-            alert("Hubo un error al liberar la mesa.");
-        }
-    } catch (error) {
-        alert("Falla de conexión al cobrar.");
-    } finally {
-        btn.disabled = false;
-        btn.textContent = '✅ Registrar Pago y Liberar Mesa';
     }
 }
 
@@ -605,16 +596,27 @@ function actualizarTotalCaja() {
     const descOriginal = document.getElementById('cobroSubtotalOriginal');
     const descFinal = document.getElementById('cobroTotalMesa');
 
+    // Extraemos el total base de un atributo inmutable, si no existe, lo creamos
+    let baseTotal = parseFloat(descFinal.getAttribute('data-total-base'));
+
+    if (isNaN(baseTotal)) {
+        // Leemos el texto original del HTML al abrir la caja por primera vez
+        const textoOriginal = descOriginal.style.display !== 'none' ? descOriginal.textContent : descFinal.textContent;
+        baseTotal = parseFloat(textoOriginal.replace('$', '')) || 0;
+        // Lo guardamos como atributo intocable en la etiqueta HTML
+        descFinal.setAttribute('data-total-base', baseTotal);
+    }
+
     if (descuentoPorcentaje > 0) {
-        const montoDescuento = totalSinDescuento * (descuentoPorcentaje / 100);
-        const totalFinal = totalSinDescuento - montoDescuento;
+        const montoDescuento = baseTotal * (descuentoPorcentaje / 100);
+        const totalFinal = baseTotal - montoDescuento;
 
         descOriginal.style.display = 'block';
-        descOriginal.textContent = `$${totalSinDescuento.toFixed(2)}`;
+        descOriginal.textContent = `$${baseTotal.toFixed(2)}`;
         descFinal.textContent = `$${totalFinal.toFixed(2)}`;
     } else {
         descOriginal.style.display = 'none';
-        descFinal.textContent = `$${totalSinDescuento.toFixed(2)}`;
+        descFinal.textContent = `$${baseTotal.toFixed(2)}`;
     }
 }
 // ==========================================
@@ -627,16 +629,16 @@ let mesaSeleccionadaMapaId = null;
 
 // Lógica de las pestañas del mapa
 document.querySelectorAll('.tab-admin-mapa').forEach(btn => {
-    btn.addEventListener('click', function() {
+    btn.addEventListener('click', function () {
         // 1. Le quitamos la clase 'active' a todos los botones
         document.querySelectorAll('.tab-admin-mapa').forEach(b => b.classList.remove('active'));
-        
+
         // 2. Se la agregamos SOLO al botón que acabamos de tocar
         this.classList.add('active');
-        
+
         // 3. ACTUALIZAMOS LA VARIABLE GLOBAL (Usando 'this' arreglamos el bug)
         sectorActivoMapa = this.getAttribute('data-sector');
-        
+
         // 4. Redibujamos el lienzo
         dibujarMesasEnLienzo();
     });
@@ -645,7 +647,7 @@ document.querySelectorAll('.tab-admin-mapa').forEach(btn => {
 // Botón Añadir Mesa
 document.getElementById('btnAgregarMesaMapa').addEventListener('click', async () => {
     const numero = prompt(`Ingrese el número de la nueva mesa para ${sectorActivoMapa}:`);
-    if(!numero) return;
+    if (!numero) return;
 
     const nuevaMesa = {
         numeroMesa: parseInt(numero),
@@ -674,7 +676,7 @@ async function cargarEditorSalon() {
 
 function dibujarMesasEnLienzo() {
     const lienzo = document.getElementById('lienzoSalon');
-    lienzo.innerHTML = ''; 
+    lienzo.innerHTML = '';
 
     const mesasFiltradas = mesasDelMapa.filter(m => m.sector === sectorActivoMapa || (!m.sector && sectorActivoMapa === 'Planta Baja'));
 
@@ -683,8 +685,8 @@ function dibujarMesasEnLienzo() {
         divMesa.className = 'mesa-draggable';
         // Si esta mesa es la que estaba seleccionada, la mantenemos marcada
         if (mesa.idMesa === mesaSeleccionadaMapaId) divMesa.classList.add('seleccionada');
-        
-        divMesa.style.width = '80px'; 
+
+        divMesa.style.width = '80px';
         divMesa.style.height = '80px';
         divMesa.id = `mesa-drag-${mesa.idMesa}`;
         divMesa.innerHTML = `Mesa<br>${mesa.numeroMesa}`;
@@ -708,7 +710,7 @@ document.getElementById('lienzoSalon').addEventListener('mousedown', (e) => {
 
 function iniciarArrastre(e) {
     mesaArrastrada = e.target;
-    
+
     //Seleccionar visualmente la mesa al tocarla
     mesaSeleccionadaMapaId = parseInt(mesaArrastrada.dataset.id);
     document.querySelectorAll('.mesa-draggable').forEach(m => m.classList.remove('seleccionada'));
@@ -747,7 +749,7 @@ function arrastrar(e) {
     let x = e.clientX - rectLienzo.left - (mesaArrastrada.offsetWidth / 2);
     let y = e.clientY - rectLienzo.top - (mesaArrastrada.offsetHeight / 2);
 
-    x = Math.round(x / 80) * 80; 
+    x = Math.round(x / 80) * 80;
     y = Math.round(y / 80) * 80;
 
     if (x < 0) x = 0; if (y < 0) y = 0;
@@ -780,8 +782,149 @@ document.getElementById('btnGuardarMapa').addEventListener('click', async () => 
                 body: JSON.stringify({ posicionX: mesa.posicionX || 0, posicionY: mesa.posicionY || 0 })
             });
         });
-        await Promise.all(promesas); 
+        await Promise.all(promesas);
         alert("¡Guardado!");
-    } catch (e) { alert("Error"); } 
+    } catch (e) { alert("Error"); }
     finally { btn.textContent = "💾 Guardar Distribución"; btn.disabled = false; }
 });
+
+// ==========================================
+// LÓGICA DEL MÓDULO: ARQUEO Y VENTAS
+// ==========================================
+
+async function cargarArqueoYVentas() {
+    try {
+        const response = await fetch('http://localhost:8080/api/facturas');
+        if (!response.ok) return;
+
+        const facturas = await response.json();
+        const tbody = document.getElementById('tablaVentasAdmin');
+        tbody.innerHTML = '';
+
+        let totalGeneral = 0, totalEfectivo = 0, totalTarjetas = 0, totalMP = 0;
+
+        facturas.slice().reverse().forEach(fac => {
+            const monto = parseFloat(fac.total);
+            totalGeneral += monto;
+
+            if (fac.metodoPago === 'EFECTIVO') totalEfectivo += monto;
+            else if (fac.metodoPago === 'MERCADO_PAGO') totalMP += monto;
+            else totalTarjetas += monto;
+
+            // TRADUCTOR DE FECHAS DE SPRING BOOT
+            let fechaLegible = "Fecha desconocida";
+            if (fac.fechaFactura) {
+                let fParsed;
+                if (Array.isArray(fac.fechaFactura)) {
+                    // Spring envía [Año, Mes, Dia, Hora, Minuto]
+                    fParsed = new Date(fac.fechaFactura[0], fac.fechaFactura[1] - 1, fac.fechaFactura[2], fac.fechaFactura[3] || 0, fac.fechaFactura[4] || 0);
+                } else {
+                    fParsed = new Date(fac.fechaFactura);
+                }
+                fechaLegible = fParsed.toLocaleString('es-AR', {
+                    day: '2-digit', month: '2-digit', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                });
+            }
+
+            const metodoLimpio = fac.metodoPago ? fac.metodoPago.replace('_', ' ') : 'DESCONOCIDO';
+
+            tbody.innerHTML += `
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                    <td style="padding: 12px; font-weight: bold; color: #4b5563;">#${fac.idFactura.toString().padStart(6, '0')}</td>
+                    <td style="padding: 12px; color: #6b7280;">${fechaLegible}</td>
+                    <td style="padding: 12px;"><span class="badge" style="background: #374151;">${metodoLimpio}</span></td>
+                    <td style="padding: 12px; text-align: right; font-weight: bold; color: #10b981;">$${monto.toFixed(2)}</td>
+                </tr>
+            `;
+        });
+
+        document.getElementById('arqueoTotal').textContent = `$${totalGeneral.toFixed(2)}`;
+        document.getElementById('arqueoEfectivo').textContent = `$${totalEfectivo.toFixed(2)}`;
+        document.getElementById('arqueoTarjetas').textContent = `$${totalTarjetas.toFixed(2)}`;
+        document.getElementById('arqueoMP').textContent = `$${totalMP.toFixed(2)}`;
+
+    } catch (error) {
+        console.error("Error al cargar facturas y arqueo:", error);
+    }
+}
+
+// Evento de Tiempos con el mismo traductor de fechas
+document.getElementById('btnVerTiempos')?.addEventListener('click', async () => {
+    const panel = document.getElementById('panelTiempos');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+
+    if (panel.style.display === 'block') {
+        const tbody = document.getElementById('tablaTiemposAdmin');
+        tbody.innerHTML = '<tr><td colspan="3">Cargando métricas...</td></tr>';
+
+        try {
+            const response = await fetch('http://localhost:8080/api/historial-mesas');
+            const historial = await response.json();
+            console.log(historial);
+            tbody.innerHTML = '';
+
+            historial.slice().reverse().forEach(h => {
+                let horaStr = "Desconocida";
+                if (h.timestamp) {
+                    let fObj;
+                    if (Array.isArray(h.timestamp)) {
+                        fObj = new Date(h.timestamp[0], h.timestamp[1] - 1, h.timestamp[2], h.timestamp[3] || 0, h.timestamp[4] || 0, h.timestamp[5] || 0);
+                    } else {
+                        fObj = new Date(h.timestamp);
+                    }
+                    horaStr = fObj.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                }
+
+                tbody.innerHTML += `
+                    <tr style="border-bottom: 1px dashed #e5e7eb;">
+                        <td style="padding: 10px; font-weight: bold;">Mesa ${h.mesa.numeroMesa}</td>
+                        <td style="padding: 10px;"><span style="color:#6b7280;">${h.estadoAnterior || 'N/A'}</span> ➡️ <span style="font-weight:bold; color:#3b82f6;">${h.estadoNuevo}</span></td>
+                        <td style="padding: 10px; color: #4b5563;">${horaStr}</td>
+                    </tr>
+                `;
+            });
+        } catch (e) {
+            tbody.innerHTML = '<tr><td colspan="3">Error al cargar tiempos.</td></tr>';
+        }
+    }
+});
+
+// Asegurate de que el botón de tu HTML llame a esta función pasándole el ID de la mesa
+async function registrarFacturaYLiberar(idMesa, idInstanciaActiva) {
+    const totalTexto = document.getElementById('cobroTotalMesa').textContent || "0";
+    const totalMesa = parseFloat(totalTexto.replace('$', ''));
+    const metodoPagoSelect = document.getElementById('selectMetodoPago');
+    const metodoPago = metodoPagoSelect ? metodoPagoSelect.value : 'EFECTIVO';
+
+    const idCajero = usuarioLogueadoGlobal.id || usuarioLogueadoGlobal.idUsuario;
+
+    const nuevaFactura = {
+        idInstancia: idInstanciaActiva || 1, // Si no hay instancia, usa un default temporal
+        idCajero: idCajero,
+        total: totalMesa,
+        metodoPago: metodoPago
+    };
+
+    try {
+        // 1. Guardamos la venta en el historial (Arqueo)
+        await fetch('http://localhost:8080/api/facturas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(nuevaFactura)
+        });
+
+        // 2. Liberamos la mesa
+        await fetch(`http://localhost:8080/api/mesas/${idMesa}/estado?nuevoEstado=LIBRE`, {
+            method: 'PUT'
+        });
+
+        alert("Cobro registrado y mesa liberada con éxito.");
+
+        // 3. Recargar vistas
+        cargarArqueoYVentas();
+        // Si tenés una función para cerrar el modal de cobro, llamala acá
+    } catch (error) {
+        alert("Error al procesar la factura.");
+    }
+}

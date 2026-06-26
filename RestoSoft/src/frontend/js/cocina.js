@@ -1,22 +1,22 @@
 document.addEventListener("DOMContentLoaded", () => {
-    
+
     // 1. CONTROL DE SEGURIDAD
     const usuarioLogueado = JSON.parse(localStorage.getItem('usuarioLogueado'));
- 
+
     // Si no hay nadie logueado, lo mandamos al index
     if (!usuarioLogueado) {
         window.location.href = 'index.html';
-        return; 
+        return;
     }
-    
+
     // Lista de roles que tienen permiso para ver esta pantalla (¡Agregamos al CAJERO!)
     const rolesPermitidos = ['COCINA', 'ADMIN', 'MOZO', 'CAJERO'];
-    
+
     if (!rolesPermitidos.includes(usuarioLogueado.rol)) {
         window.location.href = 'index.html';
-        return; 
+        return;
     }
-    
+
     // Le mostramos su nombre real y rol
     document.getElementById('nombreUsuario').textContent = `${usuarioLogueado.nombre} (${usuarioLogueado.rol})`;
 
@@ -35,19 +35,20 @@ document.addEventListener("DOMContentLoaded", () => {
     cargarTablero();
 
     // 3. RECARGA AUTOMÁTICA CADA 10 SEGUNDOS
-    setInterval(cargarTablero, 10000); 
+    setInterval(cargarTablero, 10000);
 });
 
 async function cargarTablero() {
     try {
         const response = await fetch('http://localhost:8080/api/comandas');
-        const comandas = await response.json();
+        const comandasTodas = await response.json();
+        const comandas = comandasTodas.filter(c => c.mesa.estado !== 'LIBRE');
 
         // Limpiamos las tres columnas
         const colPendientes = document.getElementById('columnaPendientes');
         const colProduccion = document.getElementById('columnaProduccion');
         const colListos = document.getElementById('columnaListos');
-        
+
         colPendientes.innerHTML = '';
         colProduccion.innerHTML = '';
         colListos.innerHTML = '';
@@ -87,7 +88,7 @@ function crearTicketHTML(comanda) {
     div.className = 'ticket-card';
 
     // Extraemos solo la hora de la fecha larguísima que manda Java
-    const hora = new Date(comanda.fechaCreacion).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    const hora = new Date(comanda.fechaCreacion).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     // Armamos la lista de platos (si Java nos mandó el array de items)
     let itemsHTML = '';
