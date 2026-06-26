@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 26-06-2026 a las 02:09:12
+-- Tiempo de generación: 26-06-2026 a las 08:10:49
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -66,6 +66,29 @@ INSERT INTO `categoria_producto` (`id_categoria`, `nombre`, `descripcion`) VALUE
 (3, 'Bebidas', 'Bebidas frias para tomar'),
 (4, 'Postre', 'Postres para acompañar despues de la comida o para comer solo'),
 (5, 'Otro', 'Otras opciones de comida o bebida que no se encuentran en las anteriores opciones');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `cliente`
+--
+
+CREATE TABLE `cliente` (
+  `id_cliente` int(11) NOT NULL,
+  `activo` bit(1) DEFAULT NULL,
+  `nombre_completo` varchar(255) DEFAULT NULL,
+  `porcentaje_descuento` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `cliente`
+--
+
+INSERT INTO `cliente` (`id_cliente`, `activo`, `nombre_completo`, `porcentaje_descuento`) VALUES
+(1, b'1', 'Elio (Dueño)', 100),
+(2, b'1', 'Juan (Descuento Empleado)', 30),
+(3, b'1', 'Milagros (Descuento Empleado)', 30),
+(4, b'1', 'Marcos (Descuento Empleado)', 30);
 
 -- --------------------------------------------------------
 
@@ -223,20 +246,33 @@ CREATE TABLE `mesa` (
   `id_mesa` int(11) NOT NULL,
   `numero_mesa` int(11) NOT NULL,
   `capacidad` int(11) NOT NULL,
-  `estado` enum('LIBRE','OCUPADA','PEDIDO_EN_CURSO','POR_COBRAR') DEFAULT 'LIBRE'
+  `estado` enum('LIBRE','OCUPADA','PEDIDO_EN_CURSO','POR_COBRAR') DEFAULT 'LIBRE',
+  `posicion_x` int(11) DEFAULT 0,
+  `posicion_y` int(11) DEFAULT 0,
+  `sector` varchar(50) DEFAULT 'Planta Baja'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `mesa`
 --
 
-INSERT INTO `mesa` (`id_mesa`, `numero_mesa`, `capacidad`, `estado`) VALUES
-(1, 1, 2, 'OCUPADA'),
-(2, 2, 2, 'LIBRE'),
-(3, 3, 4, 'OCUPADA'),
-(4, 4, 4, 'OCUPADA'),
-(5, 5, 6, 'PEDIDO_EN_CURSO'),
-(6, 6, 8, 'OCUPADA');
+INSERT INTO `mesa` (`id_mesa`, `numero_mesa`, `capacidad`, `estado`, `posicion_x`, `posicion_y`, `sector`) VALUES
+(1, 1, 2, 'OCUPADA', 50, 0, 'Planta Baja'),
+(2, 2, 2, 'LIBRE', 150, 0, 'Planta Baja'),
+(3, 3, 4, 'OCUPADA', 250, 0, 'Planta Baja'),
+(4, 4, 4, 'OCUPADA', 350, 0, 'Planta Baja'),
+(5, 5, 6, 'PEDIDO_EN_CURSO', 100, 150, 'Planta Baja'),
+(6, 6, 8, 'OCUPADA', 300, 150, 'Planta Baja'),
+(10, 10, 4, 'LIBRE', 80, 0, 'Planta Alta'),
+(11, 11, 4, 'LIBRE', 240, 0, 'Planta Alta'),
+(12, 12, 4, 'LIBRE', 400, 0, 'Planta Alta'),
+(13, 13, 4, 'LIBRE', 160, 160, 'Planta Alta'),
+(14, 20, 4, 'LIBRE', 80, 0, 'Afuera'),
+(15, 21, 4, 'LIBRE', 240, 0, 'Afuera'),
+(16, 22, 4, 'LIBRE', 400, 0, 'Afuera'),
+(17, 23, 4, 'LIBRE', 160, 160, 'Afuera'),
+(18, 24, 4, 'LIBRE', 320, 160, 'Afuera'),
+(19, 14, 4, 'LIBRE', 320, 160, 'Planta Alta');
 
 -- --------------------------------------------------------
 
@@ -284,10 +320,11 @@ CREATE TABLE `usuario` (
 --
 
 INSERT INTO `usuario` (`id_usuario`, `nombre`, `apellido`, `email`, `password`, `rol`, `activo`) VALUES
-(1, 'Mozo', 'Prueba', 'mozo@restosoft.com', '1234', 'MOZO', 1),
-(2, 'Milagros', 'Gerente', 'milagros@restosoft.com', 'admin123', 'ADMIN', 1),
+(1, 'Mozo', 'Prueba', 'mozo@restosoft.com', '1234', 'MOZO', 0),
+(2, 'Milagros', 'Nievas', 'milagros@restosoft.com', 'admin123', 'CAJERO', 1),
 (3, 'Marcos', 'Chef', 'marcos@restosoft.com', 'cocina123', 'COCINA', 1),
-(5, 'Juan', 'Mozo', 'juan@restosoft.com', 'mozo123', 'MOZO', 1);
+(5, 'Juan', 'Mozo', 'juan@restosoft.com', 'mozo123', 'MOZO', 1),
+(6, 'Elio', '', 'elio@restosoft.com', 'elio123', 'ADMIN', 1);
 
 --
 -- Índices para tablas volcadas
@@ -306,6 +343,12 @@ ALTER TABLE `auditoria_estado`
 --
 ALTER TABLE `categoria_producto`
   ADD PRIMARY KEY (`id_categoria`);
+
+--
+-- Indices de la tabla `cliente`
+--
+ALTER TABLE `cliente`
+  ADD PRIMARY KEY (`id_cliente`);
 
 --
 -- Indices de la tabla `comanda`
@@ -385,6 +428,12 @@ ALTER TABLE `categoria_producto`
   MODIFY `id_categoria` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
+-- AUTO_INCREMENT de la tabla `cliente`
+--
+ALTER TABLE `cliente`
+  MODIFY `id_cliente` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
 -- AUTO_INCREMENT de la tabla `comanda`
 --
 ALTER TABLE `comanda`
@@ -418,7 +467,7 @@ ALTER TABLE `item_comanda`
 -- AUTO_INCREMENT de la tabla `mesa`
 --
 ALTER TABLE `mesa`
-  MODIFY `id_mesa` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id_mesa` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
 
 --
 -- AUTO_INCREMENT de la tabla `producto`
@@ -430,7 +479,7 @@ ALTER TABLE `producto`
 -- AUTO_INCREMENT de la tabla `usuario`
 --
 ALTER TABLE `usuario`
-  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- Restricciones para tablas volcadas

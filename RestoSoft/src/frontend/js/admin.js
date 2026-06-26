@@ -55,6 +55,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 cargarUsuariosAdmin();
                 cargarClientesAdmin();
             }
+            if (targetId === 'sec-salon') {
+                cargarEditorSalon();
+            }
         });
     });
 
@@ -614,3 +617,171 @@ function actualizarTotalCaja() {
         descFinal.textContent = `$${totalSinDescuento.toFixed(2)}`;
     }
 }
+// ==========================================
+// LÓGICA DEL MÓDULO: EDITOR DE SALÓN (DRAG & DROP)
+// ==========================================
+let mesasDelMapa = [];
+let mesaArrastrada = null;
+let sectorActivoMapa = 'Planta Baja';
+let mesaSeleccionadaMapaId = null;
+
+// Lógica de las pestañas del mapa
+document.querySelectorAll('.tab-admin-mapa').forEach(btn => {
+    btn.addEventListener('click', function() {
+        // 1. Le quitamos la clase 'active' a todos los botones
+        document.querySelectorAll('.tab-admin-mapa').forEach(b => b.classList.remove('active'));
+        
+        // 2. Se la agregamos SOLO al botón que acabamos de tocar
+        this.classList.add('active');
+        
+        // 3. ACTUALIZAMOS LA VARIABLE GLOBAL (Usando 'this' arreglamos el bug)
+        sectorActivoMapa = this.getAttribute('data-sector');
+        
+        // 4. Redibujamos el lienzo
+        dibujarMesasEnLienzo();
+    });
+});
+
+// Botón Añadir Mesa
+document.getElementById('btnAgregarMesaMapa').addEventListener('click', async () => {
+    const numero = prompt(`Ingrese el número de la nueva mesa para ${sectorActivoMapa}:`);
+    if(!numero) return;
+
+    const nuevaMesa = {
+        numeroMesa: parseInt(numero),
+        capacidad: 4, // Por defecto
+        estado: 'LIBRE',
+        sector: sectorActivoMapa,
+        posicionX: 0,
+        posicionY: 0
+    };
+
+    try {
+        await fetch('http://localhost:8080/api/mesas', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(nuevaMesa)
+        });
+        cargarEditorSalon();
+    } catch (e) { alert("Error al crear mesa"); }
+});
+
+async function cargarEditorSalon() {
+    try {
+        const response = await fetch('http://localhost:8080/api/mesas');
+        mesasDelMapa = await response.json();
+        dibujarMesasEnLienzo();
+    } catch (error) { console.error(error); }
+}
+
+function dibujarMesasEnLienzo() {
+    const lienzo = document.getElementById('lienzoSalon');
+    lienzo.innerHTML = ''; 
+
+    const mesasFiltradas = mesasDelMapa.filter(m => m.sector === sectorActivoMapa || (!m.sector && sectorActivoMapa === 'Planta Baja'));
+
+    mesasFiltradas.forEach(mesa => {
+        const divMesa = document.createElement('div');
+        divMesa.className = 'mesa-draggable';
+        // Si esta mesa es la que estaba seleccionada, la mantenemos marcada
+        if (mesa.idMesa === mesaSeleccionadaMapaId) divMesa.classList.add('seleccionada');
+        
+        divMesa.style.width = '80px'; 
+        divMesa.style.height = '80px';
+        divMesa.id = `mesa-drag-${mesa.idMesa}`;
+        divMesa.innerHTML = `Mesa<br>${mesa.numeroMesa}`;
+        divMesa.dataset.id = mesa.idMesa;
+        divMesa.style.left = `${mesa.posicionX || 0}px`;
+        divMesa.style.top = `${mesa.posicionY || 0}px`;
+
+        divMesa.addEventListener('mousedown', iniciarArrastre);
+        lienzo.appendChild(divMesa);
+    });
+}
+
+// Clic en un lugar vacío del lienzo deselecciona todo
+document.getElementById('lienzoSalon').addEventListener('mousedown', (e) => {
+    if (e.target.id === 'lienzoSalon') {
+        mesaSeleccionadaMapaId = null;
+        document.querySelectorAll('.mesa-draggable').forEach(m => m.classList.remove('seleccionada'));
+        document.getElementById('btnEliminarMesaMapa').style.display = 'none';
+    }
+});
+
+function iniciarArrastre(e) {
+    mesaArrastrada = e.target;
+    
+    //Seleccionar visualmente la mesa al tocarla
+    mesaSeleccionadaMapaId = parseInt(mesaArrastrada.dataset.id);
+    document.querySelectorAll('.mesa-draggable').forEach(m => m.classList.remove('seleccionada'));
+    mesaArrastrada.classList.add('seleccionada');
+    document.getElementById('btnEliminarMesaMapa').style.display = 'inline-block';
+
+    document.addEventListener('mousemove', arrastrar);
+    document.addEventListener('mouseup', soltar);
+}
+
+// Evento para ELIMINAR la mesa seleccionada
+document.getElementById('btnEliminarMesaMapa').addEventListener('click', async () => {
+    if (!mesaSeleccionadaMapaId) return;
+    if (!confirm("¿Estás seguro de que querés eliminar esta mesa definitivamente?")) return;
+
+    try {
+        const response = await fetch(`http://localhost:8080/api/mesas/${mesaSeleccionadaMapaId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            mesaSeleccionadaMapaId = null;
+            document.getElementById('btnEliminarMesaMapa').style.display = 'none';
+            cargarEditorSalon(); // Recargamos para que desaparezca
+        } else {
+            alert("No podés eliminar esta mesa porque ya tiene historial de comandas. Usá la base de datos si necesitás forzar el borrado.");
+        }
+    } catch (error) {
+        alert("Falla de conexión al intentar eliminar.");
+    }
+});
+
+function arrastrar(e) {
+    if (!mesaArrastrada) return;
+    const rectLienzo = document.getElementById('lienzoSalon').getBoundingClientRect();
+    let x = e.clientX - rectLienzo.left - (mesaArrastrada.offsetWidth / 2);
+    let y = e.clientY - rectLienzo.top - (mesaArrastrada.offsetHeight / 2);
+
+    x = Math.round(x / 80) * 80; 
+    y = Math.round(y / 80) * 80;
+
+    if (x < 0) x = 0; if (y < 0) y = 0;
+    if (x > 720) x = 720; if (y > 520) y = 520;
+
+    mesaArrastrada.style.left = `${x}px`;
+    mesaArrastrada.style.top = `${y}px`;
+}
+
+function soltar() {
+    if (!mesaArrastrada) return;
+    const id = parseInt(mesaArrastrada.dataset.id);
+    const mesaObj = mesasDelMapa.find(m => m.idMesa === id);
+    if (mesaObj) {
+        mesaObj.posicionX = parseInt(mesaArrastrada.style.left);
+        mesaObj.posicionY = parseInt(mesaArrastrada.style.top);
+    }
+    document.removeEventListener('mousemove', arrastrar);
+    document.removeEventListener('mouseup', soltar);
+    mesaArrastrada = null;
+}
+
+document.getElementById('btnGuardarMapa').addEventListener('click', async () => {
+    const btn = document.getElementById('btnGuardarMapa');
+    btn.textContent = "Guardando..."; btn.disabled = true;
+    try {
+        const promesas = mesasDelMapa.map(mesa => {
+            return fetch(`http://localhost:8080/api/mesas/${mesa.idMesa}/posicion`, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ posicionX: mesa.posicionX || 0, posicionY: mesa.posicionY || 0 })
+            });
+        });
+        await Promise.all(promesas); 
+        alert("¡Guardado!");
+    } catch (e) { alert("Error"); } 
+    finally { btn.textContent = "💾 Guardar Distribución"; btn.disabled = false; }
+});

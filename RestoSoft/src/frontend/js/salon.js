@@ -3,6 +3,7 @@ let mesaSeleccionada = null;
 let usuarioLogueadoGlobal = null;
 let menuProductos = [];
 let carritoPreview = [];
+let sectorActivoSalon = 'Planta Baja';
 
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -36,12 +37,16 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 4. LÓGICA DE LAS PESTAÑAS DE SECTORES
+// 4. LÓGICA DE LAS PESTAÑAS DE SECTORES
     const botonesSector = document.querySelectorAll('.tab-btn');
     botonesSector.forEach(boton => {
         boton.addEventListener('click', (e) => {
             botonesSector.forEach(b => b.classList.remove('active'));
             e.target.classList.add('active');
+            
+            // Leemos qué texto tiene el botón (Ej: "Planta Baja")
+            sectorActivoSalon = e.target.textContent.trim(); 
+            cargarMesas(); // Recargamos para mostrar las mesas de ese piso
         });
     });
 
@@ -102,14 +107,14 @@ document.addEventListener("DOMContentLoaded", () => {
 async function cargarMesas() {
     try {
         const response = await fetch('http://localhost:8080/api/mesas');
-        const mesas = await response.json();
+        const mesasTodas = await response.json();
+
+        // Filtramos solo las mesas del sector activo
+        const mesas = mesasTodas.filter(m => m.sector === sectorActivoSalon || (!m.sector && sectorActivoSalon === 'Planta Baja'));
 
         const responseComandas = await fetch('http://localhost:8080/api/comandas');
         const comandas = await responseComandas.json();
-
-        const mesasConPedidosListos = comandas
-            .filter(c => c.estado === 'LISTO')
-            .map(c => c.mesa.idMesa);
+        const mesasConPedidosListos = comandas.filter(c => c.estado === 'LISTO').map(c => c.mesa.idMesa);
 
         const gridMesas = document.getElementById('gridMesas');
         gridMesas.innerHTML = '';
@@ -117,6 +122,10 @@ async function cargarMesas() {
         mesas.forEach(mesa => {
             const mesaCard = document.createElement('div');
             mesaCard.classList.add('mesa-card');
+
+            // Posicionamos en base a la BD
+            mesaCard.style.left = `${mesa.posicionX || 0}px`;
+            mesaCard.style.top = `${mesa.posicionY || 0}px`;
 
             if (mesa.estado === 'LIBRE') mesaCard.classList.add('mesa-libre');
             else if (mesa.estado === 'OCUPADA') mesaCard.classList.add('mesa-ocupada');

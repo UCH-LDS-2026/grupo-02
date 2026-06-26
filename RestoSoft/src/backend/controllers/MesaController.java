@@ -3,11 +3,11 @@ package backend.controllers;
 import backend.models.Mesa;
 import backend.models.Usuario;
 import backend.models.EstadoMesa;
-import backend.models.HistorialMesa; 
+import backend.models.HistorialMesa;
 import backend.models.InstanciaMesa;
 import backend.repositories.MesaRepository;
 import backend.repositories.UsuarioRepository;
-import backend.repositories.HistorialMesaRepository; 
+import backend.repositories.HistorialMesaRepository;
 import backend.repositories.InstanciaMesaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -28,7 +28,6 @@ public class MesaController {
     @Autowired
     private HistorialMesaRepository historialMesaRepository;
 
-    // Repositorios nuevos para la gestión del Turno (Instancia)
     @Autowired
     private InstanciaMesaRepository instanciaRepository;
 
@@ -36,8 +35,31 @@ public class MesaController {
     private UsuarioRepository usuarioRepository;
 
     @PostMapping
-    public Mesa crearMesa(@RequestBody Mesa nuevaMesa) {
-        return mesaRepository.save(nuevaMesa);
+    public ResponseEntity<Mesa> crearMesa(@RequestBody Mesa nuevaMesa) {
+        // Validaciones de seguridad por si el Frontend manda datos vacíos
+        if (nuevaMesa.getEstado() == null) {
+            nuevaMesa.setEstado(EstadoMesa.LIBRE);
+        }
+        if (nuevaMesa.getSector() == null || nuevaMesa.getSector().isEmpty()) {
+            nuevaMesa.setSector("Planta Baja");
+        }
+        
+        Mesa mesaGuardada = mesaRepository.save(nuevaMesa);
+        return ResponseEntity.ok(mesaGuardada);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> eliminarMesa(@PathVariable Integer id) {
+        if (mesaRepository.existsById(id)) {
+            try {
+                mesaRepository.deleteById(id);
+                return ResponseEntity.ok().build();
+            } catch (Exception e) {
+                return ResponseEntity.badRequest()
+                        .body("No se puede eliminar la mesa porque tiene facturas o comandas en el historial.");
+            }
+        }
+        return ResponseEntity.notFound().build();
     }
 
     @GetMapping
@@ -45,28 +67,39 @@ public class MesaController {
         return mesaRepository.findAll();
     }
 
-    // Endpoint mejorado: ahora recibe el id del mozo que toca el botón
+    @PutMapping("/{id}/posicion")
+    public ResponseEntity<?> actualizarPosicion(@PathVariable Integer id, @RequestBody Mesa coordenadas) {
+        Optional<Mesa> mesaOpt = mesaRepository.findById(id);
+        if (mesaOpt.isPresent()) {
+            Mesa mesa = mesaOpt.get();
+            mesa.setPosicionX(coordenadas.getPosicionX());
+            mesa.setPosicionY(coordenadas.getPosicionY());
+            mesaRepository.save(mesa);
+            return ResponseEntity.ok(mesa);
+        }
+        return ResponseEntity.notFound().build();
+    }
+
     @PutMapping("/{id}/estado")
     public ResponseEntity<?> cambiarEstado(
-            @PathVariable Integer id, 
+            @PathVariable Integer id,
             @RequestParam EstadoMesa nuevoEstado,
-            @RequestParam(required = false) Integer idUsuario) { 
+            @RequestParam(required = false) Integer idUsuario) {
 
         Optional<Mesa> mesaOptional = mesaRepository.findById(id);
 
         if (mesaOptional.isPresent()) {
             Mesa mesa = mesaOptional.get();
             EstadoMesa estadoAnterior = mesa.getEstado();
-            
-            // 1. LÓGICA DE INSTANCIA (TURNO DE MESA)
+
             InstanciaMesa instanciaActiva = null;
 
-            // Si pasa de Libre a Ocupada, creamos una apertura oficial
             if (estadoAnterior == EstadoMesa.LIBRE && nuevoEstado == EstadoMesa.OCUPADA) {
-                if (idUsuario == null) return ResponseEntity.badRequest().body("Falta el ID del Mozo");
-                
+                if (idUsuario == null)
+                    return ResponseEntity.badRequest().body("Falta el ID del Mozo");
+
                 Usuario mozo = usuarioRepository.findById(idUsuario).orElseThrow();
-                
+
                 instanciaActiva = new InstanciaMesa();
                 instanciaActiva.setMesa(mesa);
                 instanciaActiva.setMozo(mozo);
@@ -75,20 +108,18 @@ public class MesaController {
                 instanciaActiva = instanciaRepository.save(instanciaActiva);
             }
 
-            // 2. ACTUALIZACIÓN ESTÁNDAR
             mesa.setEstado(nuevoEstado);
             mesaRepository.save(mesa);
-            
-            // 3. HISTORIAL CLÁSICO
+
             HistorialMesa registro = new HistorialMesa();
             registro.setMesa(mesa);
             registro.setEstadoAnterior(estadoAnterior);
             registro.setEstadoNuevo(nuevoEstado);
-            historialMesaRepository.save(registro); 
-            
-            // Si creamos una instancia, devolvemos un objeto que agrupe la mesa y su nuevo idInstancia
+            historialMesaRepository.save(registro);
+
             if (instanciaActiva != null) {
-                return ResponseEntity.ok(new MesaConInstanciaDTO(mesa, instanciaActiva.getIdInstancia(), instanciaActiva.getMozo().getNombre(), instanciaActiva.getFechaApertura().toString()));
+                return ResponseEntity.ok(new MesaConInstanciaDTO(mesa, instanciaActiva.getIdInstancia(),
+                        instanciaActiva.getMozo().getNombre(), instanciaActiva.getFechaApertura().toString()));
             }
 
             return ResponseEntity.ok(mesa);
@@ -97,7 +128,6 @@ public class MesaController {
         }
     }
 
-    // DTO Auxiliar para devolverle al Frontend los datos del Turno creado
     public static class MesaConInstanciaDTO {
         public Mesa mesa;
         public Integer idInstanciaActiva;

@@ -19,3 +19,79 @@ body { display: block !important; height: 100vh; overflow: hidden; background-co
 .mesa-cobrar-card { padding: 15px; border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; display: flex; justify-content: space-between; align-items: center; }
 .mesa-cobrar-card:hover { border-color: #10b981; transform: translateY(-2px); }
 .mesa-cobrar-card.selected { border-color: #10b981; background: #ecfdf5; }
+/* --- ESTILOS DEL MAPA INTERACTIVO --- */
+.mesa-draggable {
+    width: 50px;
+    height: 50px;
+    background-color: #3b82f6;
+    color: white;
+    font-weight: bold;
+    font-size: 1.2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 8px;
+    position: absolute;
+    cursor: grab;
+    user-select: none;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    transition: transform 0.1s;
+}
+
+.mesa-draggable:active {
+    cursor: grabbing;
+    transform: scale(1.1);
+    background-color: #2563eb;
+    z-index: 1000;
+}
+/* --- ESTILOS DE LOS BOTONES DEL MAPA --- */
+.tabs-mapa-container { 
+    display: flex; 
+    gap: 10px; 
+    margin-bottom: 15px; 
+    align-items: center;
+}
+
+.tab-mapa { 
+    background: white; 
+    border: 1px solid #d1d5db; 
+    color: #4b5563; 
+    padding: 8px 16px; 
+    border-radius: 6px; 
+    font-weight: bold; 
+    cursor: pointer; 
+    transition: all 0.2s;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.tab-mapa:hover { 
+    background: #f3f4f6; 
+}
+
+.tab-mapa.active { 
+    background: #3b82f6; 
+    color: white; 
+    border-color: #3b82f6; 
+}
+
+.btn-anadir-mesa {
+    background-color: #10b981; 
+    color: white; 
+    border: none; 
+    padding: 8px 16px; 
+    border-radius: 6px; 
+    font-weight: bold; 
+    cursor: pointer; 
+    transition: 0.2s; 
+    margin-left: auto;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.btn-anadir-mesa:hover { 
+    background-color: #059669; 
+}
+.mesa-draggable.seleccionada {
+    box-shadow: 0 0 0 4px #ef4444; 
+    transform: scale(1.05);
+    background-color: #2563eb;
+}
