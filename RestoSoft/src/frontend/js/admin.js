@@ -1,17 +1,19 @@
 let usuarioLogueadoGlobal = null;
 let mesaParaCobrar = null;
+let listaClientesAdmin = [];
+let totalSinDescuento = 0;
 
 document.addEventListener("DOMContentLoaded", () => {
-    
+
     // 1. CONTROL DE SEGURIDAD (Solo CAJERO o ADMIN)
     const userStored = localStorage.getItem('usuarioLogueado');
     if (!userStored) {
         window.location.href = 'index.html';
         return;
     }
-    
+
     usuarioLogueadoGlobal = JSON.parse(userStored);
-    
+
     if (usuarioLogueadoGlobal.rol !== 'ADMIN' && usuarioLogueadoGlobal.rol !== 'CAJERO') {
         alert("Acceso denegado. No tienes permisos para ingresar a la Administración.");
         window.location.href = 'salon.html';
@@ -35,21 +37,30 @@ document.addEventListener("DOMContentLoaded", () => {
             // Quitamos clase active de todos
             links.forEach(l => l.classList.remove('active'));
             sections.forEach(s => s.classList.remove('active'));
-            
+
             // Activamos el clickeado
             e.target.classList.add('active');
             const targetId = e.target.getAttribute('data-target');
             document.getElementById(targetId).classList.add('active');
 
-           // Si entra a Caja, recargamos los datos
-            if(targetId === 'sec-caja') cargarMesasPorCobrar();
-            
-            if(targetId === 'sec-menu') cargarProductosAdmin();
+           // NAVEGACIÓN DEL MENÚ LATERAL
+            if (targetId === 'sec-caja') {
+                cargarMesasPorCobrar();
+                cargarClientesAdmin();
+            }
+            if (targetId === 'sec-menu') {
+                cargarProductosAdmin();
+            }
+            if (targetId === 'sec-usuarios') {
+                cargarUsuariosAdmin();
+                cargarClientesAdmin();
+            }
         });
     });
 
-    // 3. INICIO DE MÓDULO CAJA
+// 3. INICIO DE MÓDULO CAJA
     cargarMesasPorCobrar();
+    cargarClientesAdmin();
     setInterval(cargarMesasPorCobrar, 15000); // Refresca cada 15 segundos
 
     // Botón de cobro
@@ -62,11 +73,11 @@ async function cargarMesasPorCobrar() {
     try {
         const response = await fetch('http://localhost:8080/api/mesas');
         if (!response.ok) return;
-        
+
         const mesas = await response.json();
         // Filtramos solo las que el mozo marcó para cobrar
         const mesasPendientes = mesas.filter(m => m.estado === 'POR_COBRAR');
-        
+
         const contenedor = document.getElementById('listaMesasCobrar');
         contenedor.innerHTML = '';
 
@@ -78,7 +89,7 @@ async function cargarMesasPorCobrar() {
         mesasPendientes.forEach(mesa => {
             const div = document.createElement('div');
             div.className = 'mesa-cobrar-card';
-            if(mesaParaCobrar && mesaParaCobrar.idMesa === mesa.idMesa) {
+            if (mesaParaCobrar && mesaParaCobrar.idMesa === mesa.idMesa) {
                 div.classList.add('selected');
             }
 
@@ -102,17 +113,17 @@ async function cargarMesasPorCobrar() {
 
 async function abrirDetalleCobro(mesa, elementoHtml) {
     mesaParaCobrar = mesa;
-    
+
     // Remarcamos la mesa seleccionada visualmente
     document.querySelectorAll('.mesa-cobrar-card').forEach(el => el.classList.remove('selected'));
     elementoHtml.classList.add('selected');
 
     document.getElementById('panelDetalleCobro').style.display = 'block';
     document.getElementById('cobroNroMesa').textContent = mesa.numeroMesa;
-    
+
     const listaConsumo = document.getElementById('cobroListaItems');
     listaConsumo.innerHTML = '<li style="text-align:center;">Calculando cuenta...</li>';
-    
+
     try {
         // 1. Traemos la instancia para saber el ID de la instancia activa y el mozo
         const resInstancia = await fetch(`http://localhost:8080/api/instancias/mesa/${mesa.idMesa}`);
@@ -135,8 +146,8 @@ async function abrirDetalleCobro(mesa, elementoHtml) {
                         total += parseFloat(item.subtotal);
                     }
 
-                    const estiloFila = isCancelado 
-                        ? "text-decoration: line-through; color: #9ca3af; display:flex; justify-content:space-between; padding: 8px 0; border-bottom: 1px solid #eee;" 
+                    const estiloFila = isCancelado
+                        ? "text-decoration: line-through; color: #9ca3af; display:flex; justify-content:space-between; padding: 8px 0; border-bottom: 1px solid #eee;"
                         : "display:flex; justify-content:space-between; padding: 8px 0; border-bottom: 1px solid #eee;";
 
                     listaConsumo.innerHTML += `
@@ -149,7 +160,9 @@ async function abrirDetalleCobro(mesa, elementoHtml) {
             }
         });
 
-        document.getElementById('cobroTotalMesa').textContent = `$${total.toFixed(2)}`;
+        totalSinDescuento = total; // Guardamos el original
+        document.getElementById('selectClienteCobro').value = "0"; // Reiniciamos el cliente
+        actualizarTotalCaja(); // Calculamos
 
     } catch (e) {
         console.error("Error obteniendo detalles del cobro", e);
@@ -164,9 +177,6 @@ async function registrarCobro() {
     btn.disabled = true;
     btn.textContent = 'Procesando...';
 
-    // Aquí en la Fase 4 llamaremos al endpoint que crea la "Factura" real.
-    // Por ahora, para liberar el ciclo, simplemente pasamos la mesa a LIBRE,
-    // lo cual permite que el mozo la vuelva a usar inmediatamente.
     try {
         const response = await fetch(`http://localhost:8080/api/mesas/${mesaParaCobrar.idMesa}/estado?nuevoEstado=LIBRE`, {
             method: 'PUT'
@@ -205,7 +215,7 @@ async function cargarProductosAdmin() {
     try {
         const response = await fetch('http://localhost:8080/api/productos');
         productosAdmin = await response.json();
-        
+
         const tbody = document.getElementById('tablaProductosAdmin');
         tbody.innerHTML = '';
 
@@ -241,8 +251,8 @@ function abrirFormularioProducto(idProducto = null) {
         inputId.value = producto.idProducto;
         inputNombre.value = producto.nombre;
         inputPrecio.value = producto.precio;
-        
-        if(producto.categoria) {
+
+        if (producto.categoria) {
             selectCategoria.value = producto.categoria.idCategoria || producto.categoria.id || 1;
         }
     } else {
@@ -267,12 +277,12 @@ async function guardarProducto() {
         alert("Por favor, ingrese un nombre válido y un precio mayor a 0.");
         return;
     }
-    const payload = { 
-        nombre: nombre, 
+    const payload = {
+        nombre: nombre,
         precio: precio,
-        categoria: { 
+        categoria: {
             idCategoria: parseInt(idCategoriaStr),
-            id: parseInt(idCategoriaStr) 
+            id: parseInt(idCategoriaStr)
         }
     };
 
@@ -288,7 +298,7 @@ async function guardarProducto() {
 
         if (response.ok) {
             document.getElementById('panelFormProducto').style.display = 'none';
-            cargarProductosAdmin(); 
+            cargarProductosAdmin();
         } else {
             alert("Error al guardar el producto en el servidor.");
         }
@@ -306,11 +316,301 @@ async function eliminarProducto(idProducto) {
         });
 
         if (response.ok) {
-            cargarProductosAdmin(); 
+            cargarProductosAdmin();
         } else {
             alert("No se pudo eliminar. Es posible que el producto esté asociado a comandas existentes.");
         }
     } catch (error) {
         alert("Falla de conexión al intentar eliminar.");
+    }
+}
+
+// ==========================================
+// LÓGICA DEL MÓDULO: USUARIOS
+// ==========================================
+
+let listaUsuariosAdmin = [];
+
+document.getElementById('btnNuevoUsuario').addEventListener('click', () => abrirFormularioUsuario());
+document.getElementById('btnCancelarFormUsuario').addEventListener('click', () => {
+    document.getElementById('panelFormUsuario').style.display = 'none';
+});
+document.getElementById('btnGuardarUsuario').addEventListener('click', guardarUsuario);
+
+async function cargarUsuariosAdmin() {
+    try {
+        const response = await fetch('http://localhost:8080/api/usuarios');
+        listaUsuariosAdmin = await response.json();
+
+        const tbody = document.getElementById('tablaUsuariosAdmin');
+        tbody.innerHTML = '';
+
+        listaUsuariosAdmin.forEach(user => {
+            // Verificamos si está desactivado
+            const isDesactivado = user.activo === false || user.activo === 0;
+
+            let colorRol = '#6b7280';
+            if (user.rol === 'ADMIN') colorRol = '#ef4444';
+            if (user.rol === 'MOZO') colorRol = '#3b82f6';
+            if (user.rol === 'COCINA') colorRol = '#f59e0b';
+            if (user.rol === 'CAJERO') colorRol = '#10b981';
+
+            const currentId = user.id || user.idUsuario;
+            const loggedId = usuarioLogueadoGlobal.id || usuarioLogueadoGlobal.idUsuario;
+
+            // Estilos para la fila dependiendo de si está activo o inactivo
+            const estiloFila = isDesactivado
+                ? "border-bottom: 1px solid #e5e7eb; background-color: #f9fafb; color: #9ca3af; text-decoration: line-through;"
+                : "border-bottom: 1px solid #e5e7eb;";
+
+            // Estilos para la etiqueta del Rol
+            const spanRol = isDesactivado
+                ? `<span style="background-color: #e5e7eb; color: #9ca3af; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold;">${user.rol}</span>`
+                : `<span style="background-color: ${colorRol}20; color: ${colorRol}; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold;">${user.rol}</span>`;
+
+            // Botones dependiendo del estado
+            const accionHTML = isDesactivado
+                ? `<span style="color: #ef4444; font-weight: bold; font-size: 0.85rem; margin-right: 10px;">Inactivo</span>
+                   <button onclick="reactivarUsuario(${currentId})" class="btn-success" style="padding: 5px 10px; font-size: 0.85rem;">Reactivar</button>`
+                : `<button onclick="abrirFormularioUsuario(${currentId})" class="btn-info" style="padding: 5px 10px; font-size: 0.85rem; margin-right: 5px;">Editar</button>
+                   <button onclick="eliminarUsuario(${currentId})" class="btn-danger" style="padding: 5px 10px; font-size: 0.85rem;" ${currentId === loggedId ? 'disabled' : ''}>Desactivar</button>`;
+
+            tbody.innerHTML += `
+                <tr style="${estiloFila}">
+                    <td style="padding: 12px; font-weight: bold;">${user.nombre} ${user.apellido}</td>
+                    <td style="padding: 12px;">${user.email}</td>
+                    <td style="padding: 12px;">${spanRol}</td>
+                    <td style="padding: 12px; text-align: right;">${accionHTML}</td>
+                </tr>
+            `;
+        });
+    } catch (error) {
+        console.error("Error al cargar usuarios:", error);
+    }
+}
+
+async function reactivarUsuario(idUsuario) {
+    if (!confirm("¿Deseas reactivar el acceso de este usuario al sistema?")) return;
+
+    // Buscamos el usuario y lo ponemos activo nuevamente
+    const user = listaUsuariosAdmin.find(u => (u.id || u.idUsuario) === idUsuario);
+    user.activo = true;
+
+    try {
+        const response = await fetch(`http://localhost:8080/api/usuarios/${idUsuario}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(user)
+        });
+
+        if (response.ok) {
+            cargarUsuariosAdmin();
+        } else {
+            alert("No se pudo reactivar el usuario.");
+        }
+    } catch (error) {
+        alert("Falla de conexión.");
+    }
+}
+
+function abrirFormularioUsuario(idUsuario = null) {
+    const panel = document.getElementById('panelFormUsuario');
+    const titulo = document.getElementById('tituloFormUsuario');
+    const inputId = document.getElementById('formUsuarioId');
+    const inputNombre = document.getElementById('formUsuarioNombre');
+    const inputApellido = document.getElementById('formUsuarioApellido');
+    const inputEmail = document.getElementById('formUsuarioEmail');
+    const inputPassword = document.getElementById('formUsuarioPassword');
+    const selectRol = document.getElementById('formUsuarioRol');
+
+    if (idUsuario) {
+        // SOLUCIÓN: Buscamos el usuario usando la misma lógica flexible
+        const user = listaUsuariosAdmin.find(u => (u.id || u.idUsuario) === idUsuario);
+        titulo.textContent = 'Editar Usuario';
+        inputId.value = user.id || user.idUsuario;
+        inputNombre.value = user.nombre;
+        inputApellido.value = user.apellido;
+        inputEmail.value = user.email;
+        inputPassword.value = user.password;
+        selectRol.value = user.rol;
+    } else {
+        titulo.textContent = 'Añadir Nuevo Usuario';
+        inputId.value = '';
+        inputNombre.value = '';
+        inputApellido.value = '';
+        inputEmail.value = '';
+        inputPassword.value = '';
+        selectRol.value = 'MOZO';
+    }
+
+    panel.style.display = 'block';
+    inputNombre.focus();
+}
+async function guardarUsuario() {
+    const id = document.getElementById('formUsuarioId').value;
+
+    const payload = {
+        nombre: document.getElementById('formUsuarioNombre').value.trim(),
+        apellido: document.getElementById('formUsuarioApellido').value.trim(),
+        email: document.getElementById('formUsuarioEmail').value.trim(),
+        password: document.getElementById('formUsuarioPassword').value.trim(),
+        rol: document.getElementById('formUsuarioRol').value,
+        activo: true
+    };
+
+    if (!payload.nombre || !payload.email || !payload.password) {
+        alert("El nombre, email y contraseña son obligatorios.");
+        return;
+    }
+
+    const method = id ? 'PUT' : 'POST';
+    const url = id ? `http://localhost:8080/api/usuarios/${id}` : 'http://localhost:8080/api/usuarios';
+
+    try {
+        const response = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+            document.getElementById('panelFormUsuario').style.display = 'none';
+            cargarUsuariosAdmin();
+        } else {
+            alert("Error al guardar el usuario. Puede que el email ya exista.");
+        }
+    } catch (error) {
+        alert("Falla de conexión.");
+    }
+}
+
+async function eliminarUsuario(idUsuario) {
+    if (!confirm("¿Eliminar a este empleado del sistema?")) return;
+
+    try {
+        const response = await fetch(`http://localhost:8080/api/usuarios/${idUsuario}`, { method: 'DELETE' });
+        if (response.ok) {
+            cargarUsuariosAdmin();
+        } else {
+            alert("No se puede borrar. Seguramente este usuario tiene comandas o cobros registrados.");
+        }
+    } catch (error) {
+        alert("Falla de conexión.");
+    }
+}
+
+// ==========================================
+// LÓGICA DEL MÓDULO: CLIENTES (DESCUENTOS)
+// ==========================================
+
+document.getElementById('btnNuevoCliente').addEventListener('click', () => abrirFormularioCliente());
+document.getElementById('btnCancelarFormCliente').addEventListener('click', () => document.getElementById('panelFormCliente').style.display = 'none');
+document.getElementById('btnGuardarCliente').addEventListener('click', guardarCliente);
+
+async function cargarClientesAdmin() {
+    try {
+        const response = await fetch('http://localhost:8080/api/clientes');
+        listaClientesAdmin = await response.json();
+
+        // Llenar tabla de Administración
+        const tbody = document.getElementById('tablaClientesAdmin');
+        if (tbody) {
+            tbody.innerHTML = '';
+            listaClientesAdmin.forEach(cli => {
+                const isDesactivado = cli.activo === false;
+                const estilo = isDesactivado ? "background-color: #f9fafb; color: #9ca3af; text-decoration: line-through;" : "";
+                const currentId = cli.idCliente || cli.id;
+
+                const acciones = isDesactivado
+                    ? `<button onclick="reactivarCliente(${currentId})" class="btn-success" style="padding: 5px; font-size: 0.8rem;">Reactivar</button>`
+                    : `<button onclick="abrirFormularioCliente(${currentId})" class="btn-info" style="padding: 5px; font-size: 0.8rem; margin-right: 5px;">Editar</button>
+                       <button onclick="desactivarCliente(${currentId})" class="btn-danger" style="padding: 5px; font-size: 0.8rem;">Desactivar</button>`;
+
+                tbody.innerHTML += `
+                    <tr style="border-bottom: 1px solid #e5e7eb; ${estilo}">
+                        <td style="padding: 12px; font-weight: bold;">${cli.nombreCompleto}</td>
+                        <td style="padding: 12px;"><span class="badge" style="background:#10b981;">-${cli.porcentajeDescuento}%</span></td>
+                        <td style="padding: 12px; text-align: right;">${acciones}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Llenar selector de la Caja
+        const selectCobro = document.getElementById('selectClienteCobro');
+        if (selectCobro) {
+            selectCobro.innerHTML = '<option value="0">Consumidor Final (0%)</option>';
+            listaClientesAdmin.filter(c => c.activo).forEach(cli => {
+                selectCobro.innerHTML += `<option value="${cli.porcentajeDescuento}">${cli.nombreCompleto} (-${cli.porcentajeDescuento}%)</option>`;
+            });
+        }
+    } catch (e) { console.error(e); }
+}
+
+function abrirFormularioCliente(id = null) {
+    const p = document.getElementById('panelFormCliente');
+    if (id) {
+        const cli = listaClientesAdmin.find(c => (c.idCliente || c.id) === id);
+        document.getElementById('tituloFormCliente').textContent = 'Editar Cliente';
+        document.getElementById('formClienteId').value = id;
+        document.getElementById('formClienteNombre').value = cli.nombreCompleto;
+        document.getElementById('formClienteDescuento').value = cli.porcentajeDescuento;
+    } else {
+        document.getElementById('tituloFormCliente').textContent = 'Añadir Cliente';
+        document.getElementById('formClienteId').value = '';
+        document.getElementById('formClienteNombre').value = '';
+        document.getElementById('formClienteDescuento').value = '';
+    }
+    p.style.display = 'block';
+}
+
+async function guardarCliente() {
+    const id = document.getElementById('formClienteId').value;
+    const payload = {
+        nombreCompleto: document.getElementById('formClienteNombre').value.trim(),
+        porcentajeDescuento: parseInt(document.getElementById('formClienteDescuento').value),
+        activo: true
+    };
+    const method = id ? 'PUT' : 'POST';
+    const url = id ? `http://localhost:8080/api/clientes/${id}` : 'http://localhost:8080/api/clientes';
+
+    await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    document.getElementById('panelFormCliente').style.display = 'none';
+    cargarClientesAdmin();
+}
+
+async function desactivarCliente(id) {
+    if (!confirm("¿Desactivar cliente?")) return;
+    const cli = listaClientesAdmin.find(c => (c.idCliente || c.id) === id);
+    cli.activo = false;
+    await fetch(`http://localhost:8080/api/clientes/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cli) });
+    cargarClientesAdmin();
+}
+
+async function reactivarCliente(id) {
+    const cli = listaClientesAdmin.find(c => (c.idCliente || c.id) === id);
+    cli.activo = true;
+    await fetch(`http://localhost:8080/api/clientes/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cli) });
+    cargarClientesAdmin();
+}
+
+// Listener para cuando el cajero cambia de cliente en el combobox
+document.getElementById('selectClienteCobro').addEventListener('change', actualizarTotalCaja);
+
+function actualizarTotalCaja() {
+    const descuentoPorcentaje = parseInt(document.getElementById('selectClienteCobro').value) || 0;
+    const descOriginal = document.getElementById('cobroSubtotalOriginal');
+    const descFinal = document.getElementById('cobroTotalMesa');
+
+    if (descuentoPorcentaje > 0) {
+        const montoDescuento = totalSinDescuento * (descuentoPorcentaje / 100);
+        const totalFinal = totalSinDescuento - montoDescuento;
+
+        descOriginal.style.display = 'block';
+        descOriginal.textContent = `$${totalSinDescuento.toFixed(2)}`;
+        descFinal.textContent = `$${totalFinal.toFixed(2)}`;
+    } else {
+        descOriginal.style.display = 'none';
+        descFinal.textContent = `$${totalSinDescuento.toFixed(2)}`;
     }
 }

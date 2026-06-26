@@ -65,7 +65,26 @@
                             <span id="cobroTotalMesa"
                                 style="font-size: 1.5rem; font-weight: bold; color: #10b981;">$0.00</span>
                         </div>
+                        <div style="margin-top: 15px;">
+                            <label style="font-weight: bold; display: block; margin-bottom: 8px;">Cliente (Aplicar
+                                Descuento)</label>
+                            <select id="selectClienteCobro"
+                                style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+                                <option value="0">Consumidor Final (0%)</option>
+                            </select>
+                        </div>
 
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; background: #f3f4f6; padding: 15px; border-radius: 6px; margin-top: 15px;">
+                            <span style="font-size: 1.2rem; font-weight: bold;">TOTAL A COBRAR</span>
+                            <div style="text-align: right;">
+                                <div id="cobroSubtotalOriginal"
+                                    style="font-size: 0.9rem; color: #ef4444; text-decoration: line-through; display: none;">
+                                    $0.00</div>
+                                <span id="cobroTotalMesa"
+                                    style="font-size: 1.5rem; font-weight: bold; color: #10b981;">$0.00</span>
+                            </div>
+                        </div>
                         <div style="margin-top: 20px;">
                             <label style="font-weight: bold; display: block; margin-bottom: 8px;">Método de Pago</label>
                             <select id="selectMetodoPago"
@@ -107,18 +126,21 @@
                     <h3 id="tituloFormProducto" style="margin-bottom: 15px;">Añadir Producto</h3>
                     <input type="hidden" id="formProductoId">
 
-                  <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                    <div style="display: flex; gap: 15px; margin-bottom: 15px;">
                         <div style="flex: 2;">
                             <label style="font-weight: bold; color: #4b5563;">Nombre del Producto</label>
-                            <input type="text" id="formProductoNombre" placeholder="Ej: Pizza Napolitana" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin-top: 5px;">
+                            <input type="text" id="formProductoNombre" placeholder="Ej: Pizza Napolitana"
+                                style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin-top: 5px;">
                         </div>
                         <div style="flex: 1;">
                             <label style="font-weight: bold; color: #4b5563;">Precio ($)</label>
-                            <input type="number" id="formProductoPrecio" placeholder="0.00" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin-top: 5px;">
+                            <input type="number" id="formProductoPrecio" placeholder="0.00"
+                                style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin-top: 5px;">
                         </div>
                         <div style="flex: 1;">
                             <label style="font-weight: bold; color: #4b5563;">Categoría</label>
-                            <select id="formProductoCategoria" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin-top: 5px;">
+                            <select id="formProductoCategoria"
+                                style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin-top: 5px;">
                                 <option value="1">Combos</option>
                                 <option value="2">Comidas</option>
                                 <option value="3">Bebidas</option>
@@ -151,7 +173,114 @@
                 </div>
             </section>
             <section id="sec-usuarios" class="admin-section">
-                <h2>Usuarios y Clientes</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2>Gestión de Personal</h2>
+                    <button id="btnNuevoUsuario" class="btn-success">+ Nuevo Usuario</button>
+                </div>
+
+                <div id="panelFormUsuario" class="panel-blanco"
+                    style="display: none; margin-bottom: 20px; border-left: 4px solid #8b5cf6;">
+                    <h3 id="tituloFormUsuario" style="margin-bottom: 15px;">Añadir Usuario</h3>
+                    <input type="hidden" id="formUsuarioId">
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div>
+                            <label style="font-weight: bold; color: #4b5563;">Nombre</label>
+                            <input type="text" id="formUsuarioNombre" placeholder="Ej: Carlos"
+                                style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin-top: 5px;">
+                        </div>
+                        <div>
+                            <label style="font-weight: bold; color: #4b5563;">Apellido</label>
+                            <input type="text" id="formUsuarioApellido" placeholder="Ej: Gómez"
+                                style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin-top: 5px;">
+                        </div>
+                        <div>
+                            <label style="font-weight: bold; color: #4b5563;">Email (Usuario de Login)</label>
+                            <input type="email" id="formUsuarioEmail" placeholder="carlos@restosoft.com"
+                                style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin-top: 5px;">
+                        </div>
+                        <div>
+                            <label style="font-weight: bold; color: #4b5563;">Contraseña</label>
+                            <input type="text" id="formUsuarioPassword" placeholder="***"
+                                style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin-top: 5px;">
+                        </div>
+                        <div>
+                            <label style="font-weight: bold; color: #4b5563;">Rol del Sistema</label>
+                            <select id="formUsuarioRol"
+                                style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin-top: 5px;">
+                                <option value="MOZO">Mozo (Salón)</option>
+                                <option value="COCINA">Cocinero (Kanban)</option>
+                                <option value="CAJERO">Cajero (Cobros)</option>
+                                <option value="ADMIN">Administrador (Total)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                        <button id="btnCancelarFormUsuario" class="btn-danger"
+                            style="background-color: #9ca3af;">Cancelar</button>
+                        <button id="btnGuardarUsuario" class="btn-info" style="background-color: #8b5cf6;">Guardar
+                            Usuario</button>
+                    </div>
+                </div>
+
+                <div class="panel-blanco">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #e5e7eb; background-color: #f9fafb;">
+                                <th style="padding: 12px; color: #374151;">Nombre Completo</th>
+                                <th style="padding: 12px; color: #374151;">Email</th>
+                                <th style="padding: 12px; color: #374151;">Rol</th>
+                                <th style="padding: 12px; text-align: right; color: #374151;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaUsuariosAdmin">
+                        </tbody>
+                    </table>
+                </div>
+                <hr class="divider" style="margin: 40px 0; border-top: 2px solid #e5e7eb;">
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2>Gestión de Clientes Frecuentes</h2>
+                    <button id="btnNuevoCliente" class="btn-success">+ Nuevo Cliente</button>
+                </div>
+
+                <div id="panelFormCliente" class="panel-blanco"
+                    style="display: none; margin-bottom: 20px; border-left: 4px solid #10b981;">
+                    <h3 id="tituloFormCliente" style="margin-bottom: 15px;">Añadir Cliente</h3>
+                    <input type="hidden" id="formClienteId">
+                    <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                        <div style="flex: 2;">
+                            <label style="font-weight: bold; color: #4b5563;">Nombre / Empresa</label>
+                            <input type="text" id="formClienteNombre" placeholder="Ej: Juan Pérez"
+                                style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin-top: 5px;">
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="font-weight: bold; color: #4b5563;">Descuento (%)</label>
+                            <input type="number" id="formClienteDescuento" placeholder="Ej: 10"
+                                style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin-top: 5px;">
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                        <button id="btnCancelarFormCliente" class="btn-danger"
+                            style="background-color: #9ca3af;">Cancelar</button>
+                        <button id="btnGuardarCliente" class="btn-info" style="background-color: #10b981;">Guardar
+                            Cliente</button>
+                    </div>
+                </div>
+
+                <div class="panel-blanco">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #e5e7eb; background-color: #f9fafb;">
+                                <th style="padding: 12px;">Nombre Completo</th>
+                                <th style="padding: 12px;">Descuento Aplicable</th>
+                                <th style="padding: 12px; text-align: right;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaClientesAdmin"></tbody>
+                    </table>
+                </div>
             </section>
 
         </main>

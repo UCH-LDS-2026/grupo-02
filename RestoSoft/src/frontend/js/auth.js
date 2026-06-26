@@ -7,7 +7,6 @@ document.getElementById('loginForm').addEventListener('submit', async (event) =>
     const password = document.getElementById('password').value;
     const errorMessage = document.getElementById('errorMessage');
 
-    // Ocultamos el error por si quedó prendido de un intento anterior
     errorMessage.style.display = 'none';
 
     try {
@@ -18,16 +17,23 @@ document.getElementById('loginForm').addEventListener('submit', async (event) =>
 
         // 4. Si el login es exitoso (Código 200)
         if (response.ok) {
-            // EXTRAEMOS EL USUARIO DEL JSON DE RESPUESTA
             const usuario = await response.json(); 
             
-            // Guardamos el usuario y mandamos a TODOS al salón
+            // Guardamos el usuario
             localStorage.setItem('usuarioLogueado', JSON.stringify(usuario));
-            window.location.href = 'salon.html';
+            
+            // Redirigimos inteligentemente según el rol
+            if (usuario.rol === 'COCINA') {
+                window.location.href = 'cocina.html';
+            } else{
+                 window.location.href = 'salon.html'; 
+            }
         } else {
-            // Mostramos el mensaje de error visual en lugar de un alert molesto
+            const mensajeError = await response.text();
+            
+            // Mostramos el mensaje de error visual dinámico
             errorMessage.style.display = 'block';
-            errorMessage.textContent = 'Usuario o contraseña incorrectos';
+            errorMessage.textContent = mensajeError || 'Usuario o contraseña incorrectos';
         }
     } catch (error) {
         console.error("Error de conexión:", error);
